@@ -12,5 +12,44 @@ body {
   display: grid;
   grid-template-columns: repeat(8, 60px);
   grid-template-rows: repeat(8, 60px);
-  border: 2px solid #333;
+  border: 2px solid #333333;
+}
+
+#turn-indicator {
+  font-size: 20px;
+  margin-bottom: 10px;
+  font-weight: bold;
+  color: #444;
+  text-align: center;
+}
+
+/* Board squares */
+.square {
+  width: 60px;
+  height: 60px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 36px;
+  font-family: sans-serif;
+}
+
+/* Background colors */
+.light-square {
+  background-color: #eee;
+}
+
+.dark-square {
+  background-color: #555;
+}
+
+/* Piece styling */
+.white-piece {
+  color: white;
+  text-shadow: 0 0 2px #000;
+}
+
+.black-piece {
+  color: black;
+  text-shadow: 0 0 2px #fff;
 }
