@@ -12,6 +12,18 @@
   <div id="turn-indicator">White's turn</div>
   <div id="board"></div>
 
+  <div id="controls">
+    <button id="resignBtn">Resign</button>
+    <button id="offerDrawBtn">Offer Draw</button>
+    <div id="drawOffer" style="display:none;">
+      <span>Draw offered. Do you accept?</span>
+      <button id="acceptDrawBtn">Accept Draw</button>
+      <button id="declineDrawBtn">Decline Draw</button>
+    </div>
+  </div>
+  <div id="checkStatus" style="margin: 10px; font-weight: bold; color: red;"></div>
+  <div id="gameStatus" style="margin-top: 10px; font-weight: bold; font-size: 18px; color: darkred;"></div>
+
   <script src="app.js"></script>
 </body>
 </html>
