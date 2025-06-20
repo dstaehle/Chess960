@@ -58,7 +58,7 @@ body {
 }
 
 /* Piece styling */
-.white-piece {
+/*.white-piece {
   color: #fff;
   text-shadow:
     -1px -1px 0 #000,
@@ -66,9 +66,12 @@ body {
     -1px 1px 0 #000,
     1px 1px 0 #000;
 }
-
+*/
+.white-piece {
+  color: red !important;
+}
 .black-piece {
-  color: #000;
+  color: #3f0505;
   text-shadow:
     -1px -1px 0 #fff,
     1px -1px 0 #fff,
