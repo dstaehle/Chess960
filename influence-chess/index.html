@@ -1,29 +1,107 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Influence Chess 960</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Fallback or override styles */
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      background-color: #f0f0f0;
+    }
+
+    #board {
+      display: grid;
+      grid-template-columns: repeat(8, 60px);
+      grid-template-rows: repeat(8, 60px);
+      gap: 0;
+      margin: 20px auto;
+      border: 2px solid #333;
+      width: fit-content;
+      user-select: none; /* prevent text selection while playing */
+    }
+
+    .square {
+      width: 60px;
+      height: 60px;
+      box-sizing: border-box;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 36px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .light-square {
+      background-color: #f0d9b5; /* classic light square color */
+      color: black;
+    }
+
+    .dark-square {
+      background-color: #779556; /* classic dark square color */
+      color: white;
+    }
+
+    #turn-indicator,
+    #checkStatus,
+    #gameStatus {
+      text-align: center;
+      font-weight: bold;
+      margin: 10px 0;
+      min-height: 1.2em;
+    }
+
+    #controls {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    button {
+      margin: 0 5px;
+      padding: 8px 12px;
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 4px;
+      border: 1px solid #444;
+      background-color: #eee;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover,
+    button:focus {
+      background-color: #ddd;
+      outline: none;
+    }
+
+    #drawOffer {
+      margin-top: 10px;
+      display: none;
+    }
+  </style>
 </head>
 <body>
   <h1>Influence Chess 960</h1>
-  <div id="turn-indicator">White's turn</div>
-  <div id="board"></div>
 
-  <div id="controls">
-    <button id="resignBtn">Resign</button>
-    <button id="offerDrawBtn">Offer Draw</button>
-    <div id="drawOffer" style="display:none;">
-      <span>Draw offered. Do you accept?</span>
-      <button id="acceptDrawBtn">Accept Draw</button>
-      <button id="declineDrawBtn">Decline Draw</button>
+  <div id="turn-indicator" aria-live="polite">White's turn</div>
+  <div id="checkStatus" aria-live="polite"></div>
+  <div id="board" role="grid" aria-label="Chessboard"></div>
+  <div id="gameStatus" aria-live="polite"></div>
+
+  <div id="controls" role="region" aria-label="Game controls">
+    <button id="resignBtn" type="button">Resign</button>
+    <button id="offerDrawBtn" type="button">Offer Draw</button>
+    <div id="drawOffer" role="dialog" aria-modal="true" aria-hidden="true">
+      <p>Accept draw?</p>
+      <button id="acceptDrawBtn" type="button">Yes</button>
+      <button id="declineDrawBtn" type="button">No</button>
     </div>
   </div>
-  <div id="checkStatus" style="margin: 10px; font-weight: bold; color: red;"></div>
-  <div id="gameStatus" style="margin-top: 10px; font-weight: bold; font-size: 18px; color: darkred;"></div>
 
-  <script src="app.js"></script>
+  <!-- Main JS entry point, module script -->
+  <script type="module" src="./game.js"></script>
 </body>
 </html>

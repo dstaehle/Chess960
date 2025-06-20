@@ -1,4 +1,5 @@
 /* style.css */
+
 body {
   font-family: sans-serif;
   display: flex;
@@ -13,6 +14,7 @@ body {
   grid-template-columns: repeat(8, 60px);
   grid-template-rows: repeat(8, 60px);
   border: 2px solid #333333;
+  user-select: none; /* Prevent text selection on click-drag */
 }
 
 #turn-indicator {
@@ -32,24 +34,44 @@ body {
   align-items: center;
   font-size: 36px;
   font-family: sans-serif;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.square:hover {
+  filter: brightness(1.15);
 }
 
 /* Background colors */
 .light-square {
-  background-color: #f0d9b5;
+  background-color: #f0d9b5; /* classic light tan */
 }
 
 .dark-square {
-  background-color: #057905;
+  background-color: #779556; /* softer green typical of chessboards */
+}
+
+/* Highlight for legal moves */
+.highlight {
+  box-shadow: inset 0 0 10px 4px rgba(255, 215, 0, 0.7);
+  border-radius: 8px;
 }
 
 /* Piece styling */
 .white-piece {
-  color: white;
-  text-shadow: 0 0 2px #000;
+  color: #fff;
+  text-shadow:
+    -1px -1px 0 #000,
+    1px -1px 0 #000,
+    -1px 1px 0 #000,
+    1px 1px 0 #000;
 }
 
 .black-piece {
-  color: black;
-  text-shadow: 0 0 2px #fff;
+  color: #000;
+  text-shadow:
+    -1px -1px 0 #fff,
+    1px -1px 0 #fff,
+    -1px 1px 0 #fff,
+    1px 1px 0 #fff;
 }
