@@ -22,21 +22,41 @@ const boardElement = document.getElementById('board');
 const turnIndicator = document.getElementById('turn-indicator');
 const gameStatusDiv = document.getElementById('gameStatus');
 
-let boardState, currentPlayer, selectedSquare, legalMoves, gameOver, lastMove;
+let boardState, currentPlayer, selectedSquare, legalMoves, gameOver, lastMove, castlingInfo, hasMoved;
+
+
+
 
 function initializeGame() {
   const init = createInitialBoard();
   boardState = init.board;
+  castlingInfo = init.castlingInfo; // ← assumes you store this globally
   currentPlayer = 'white';
   selectedSquare = null;
   legalMoves = [];
   gameOver = false;
   lastMove = null;
 
+  // Step 2: Initialize rook movement tracking dynamically
+  hasMoved = {
+    whiteKing: false,
+    blackKing: false,
+    whiteRooks: {},
+    blackRooks: {}
+  };
+
+  for (const col of castlingInfo.white.rookCols) {
+    hasMoved.whiteRooks[col] = false;
+  }
+
+  for (const col of castlingInfo.black.rookCols) {
+    hasMoved.blackRooks[col] = false;
+  }
 
   renderBoard();
   updateTurnIndicator();
   clearGameStatus();
+  updateCastlingStatus();
 }
 
 function renderBoard() {
@@ -63,6 +83,25 @@ function renderBoard() {
 function updateTurnIndicator() {
   turnIndicator.textContent = currentPlayer.charAt(0).toUpperCase() + currentPlayer.slice(1) + "'s turn";
 }
+
+function updateCastlingStatus() {
+  const el = document.getElementById("castlingStatus");
+  if (!el) return;
+
+  function formatStatus(kingMoved, rooks) {
+    const available = [];
+    for (const col in rooks) {
+      if (!rooks[col]) available.push(col);
+    }
+    return kingMoved ? "X" : available.length ? `Rooks @ [${available.join(", ")}]` : "None";
+  }
+
+  const white = formatStatus(hasMoved.whiteKing, hasMoved.whiteRooks);
+  const black = formatStatus(hasMoved.blackKing, hasMoved.blackRooks);
+
+  el.textContent = `Castling rights — White: ${white} | Black: ${black}`;
+}
+
 
 function clearGameStatus() {
   gameStatusDiv.textContent = '';
@@ -104,25 +143,57 @@ function onSquareClick(e) {
     highlightLegalMoves();
   } else {
     // Attempt move
-    const moveIsLegal = legalMoves.some(m => m.row === row && m.col === col);
-    if (!moveIsLegal) {
+    const move = legalMoves.find(m => m.row === row && m.col === col);
+    if (!move) {
       selectedSquare = null;
       legalMoves = [];
       renderBoard();
       return;
     }
 
-    makeMove(selectedSquare, { row, col });
+    makeMove(selectedSquare, move);
   }
+
   console.log('Clicked square', row, col, 'Piece:', clickedPiece);
   console.log('Current player:', currentPlayer);
-
 }
+
 
 function makeMove(from, to) {
   const piece = boardState[from.row][from.col];
 
-  // En passant logic
+  // === Handle castling move ===
+  if (piece.toLowerCase() === 'k' && to.isCastle && typeof to.rookCol === 'number') {
+    const direction = to.rookCol < from.col ? -1 : 1;
+    const rookFromCol = to.rookCol;
+    const rookToCol = from.col + direction;
+
+    // Move the rook
+    const rook = boardState[from.row][rookFromCol];
+    boardState[from.row][rookFromCol] = null;
+    boardState[from.row][rookToCol] = rook;
+  }
+
+  // === Update king or rook movement flags ===
+  if (piece.toLowerCase() === 'k') {
+    if (isWhitePiece(piece)) {
+      hasMoved.whiteKing = true;
+    } else {
+      hasMoved.blackKing = true;
+    }
+  }
+
+  if (piece.toLowerCase() === 'r') {
+    const rookCol = from.col;
+    if (isWhitePiece(piece) && hasMoved.whiteRooks.hasOwnProperty(rookCol)) {
+      hasMoved.whiteRooks[rookCol] = true;
+    }
+    if (isBlackPiece(piece) && hasMoved.blackRooks.hasOwnProperty(rookCol)) {
+      hasMoved.blackRooks[rookCol] = true;
+    }
+  }
+
+  // === En passant logic ===
   if (
     piece.toLowerCase() === 'p' &&
     Math.abs(to.col - from.col) === 1 &&
@@ -132,15 +203,13 @@ function makeMove(from, to) {
     Math.abs(lastMove.to.row - lastMove.from.row) === 2 &&
     lastMove.to.row === from.row &&
     lastMove.to.col === to.col
-  ) 
-
-  {
+  ) {
     const dir = currentPlayer === 'white' ? 1 : -1;
     const capturedRow = to.row + dir;
     boardState[capturedRow][to.col] = null;
   }
 
-
+  // === Execute standard move ===
   boardState[to.row][to.col] = piece;
   boardState[from.row][from.col] = null;
   lastMove = { piece, from, to };
@@ -162,10 +231,12 @@ function makeMove(from, to) {
   currentPlayer = opponent;
   updateTurnIndicator();
   renderBoard();
+  updateCastlingStatus();
+
   console.log(`Move made by ${currentPlayer}: ${piece} from`, from, 'to', to);
   console.log('Next player:', currentPlayer === 'white' ? 'black' : 'white');
-
 }
+
 
 
 
@@ -181,8 +252,56 @@ function getLegalMovesForPiece(piece, from, board) {
 
     }
   }
+  // Add castling options if this is the king
+  if (piece.toLowerCase() === 'k') {
+    const isWhite = isWhitePiece(piece);
+    const row = from.row;
+    const rookFlags = isWhite ? hasMoved.whiteRooks : hasMoved.blackRooks;
+    const kingMoved = isWhite ? hasMoved.whiteKing : hasMoved.blackKing;
+
+    if (!kingMoved) {
+      // Look for unmoved rooks
+      for (const rookColStr in rookFlags) {
+        const rookCol = parseInt(rookColStr);
+        if (!rookFlags[rookCol]) {
+          // Check that there's a rook there of the right color
+          const rook = board[row][rookCol];
+          if (
+            rook &&
+            rook.toLowerCase() === 'r' &&
+            (isWhitePiece(rook) === isWhite)
+          ) {
+            const direction = rookCol < from.col ? -1 : 1;
+            const pathCols = [];
+
+            // All squares between king and rook must be empty
+            for (let c = from.col + direction; c !== rookCol; c += direction) {
+              pathCols.push(c);
+            }
+
+            const pathClear = pathCols.every(c => !board[row][c]);
+            const safeSquares = [from.col, from.col + direction, from.col + 2 * direction];
+
+            const noChecks = safeSquares.every(c => {
+              const testBoard = copyBoard(board);
+              testBoard[row][c] = piece;
+              testBoard[from.row][from.col] = null;
+              return !isInCheck(testBoard, isWhite ? 'white' : 'black', lastMove);
+            });
+
+            if (pathClear && noChecks) {
+              // Valid castling: king moves two squares toward rook
+              moves.push({ row, col: from.col + 2 * direction, isCastle: true, rookCol });
+            }
+          }
+        }
+      }
+    }
+  }
 
   return moves;
+
+  
 }
 
 

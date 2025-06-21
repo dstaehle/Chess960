@@ -59,8 +59,31 @@ function createInitialBoard() {
     board[7][col] = whiteBack[col];
   }
 
-  return { board, whiteBack, blackBack };
+  // Get start positions
+  const whiteKingCol = whiteBack.findIndex(p => p === 'K');
+  const whiteRookCols = whiteBack.map((p, i) => (p === 'R' ? i : null)).filter(i => i !== null);
+
+  const blackKingCol = blackBack.findIndex(p => p === 'k');
+  const blackRookCols = blackBack.map((p, i) => (p === 'r' ? i : null)).filter(i => i !== null);
+
+  const castlingInfo = {
+    white: {
+      kingStartCol: whiteKingCol,
+      rookCols: whiteRookCols,
+      kingSideTarget: 6, // g1
+      queenSideTarget: 2 // c1
+    },
+    black: {
+      kingStartCol: blackKingCol,
+      rookCols: blackRookCols,
+      kingSideTarget: 6, // g8
+      queenSideTarget: 2 // c8
+    }
+  };
+
+  return { board, whiteBack, blackBack, castlingInfo };
 }
+
 
 function isPathClear(from, to, board) {
   const stepRow = Math.sign(to.row - from.row);
