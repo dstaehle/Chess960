@@ -68,7 +68,7 @@ body {
 }
 */
 .white-piece {
-  color: red !important;
+  color: rgb(0, 229, 255) !important;
 }
 .black-piece {
   color: #3f0505;

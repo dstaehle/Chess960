@@ -1,4 +1,5 @@
 
+
 // game.js
 import {
   PIECES,
@@ -21,7 +22,7 @@ const boardElement = document.getElementById('board');
 const turnIndicator = document.getElementById('turn-indicator');
 const gameStatusDiv = document.getElementById('gameStatus');
 
-let boardState, currentPlayer, selectedSquare, legalMoves, gameOver;
+let boardState, currentPlayer, selectedSquare, legalMoves, gameOver, lastMove;
 
 function initializeGame() {
   const init = createInitialBoard();
@@ -30,6 +31,8 @@ function initializeGame() {
   selectedSquare = null;
   legalMoves = [];
   gameOver = false;
+  lastMove = null;
+
 
   renderBoard();
   updateTurnIndicator();
@@ -96,7 +99,7 @@ function onSquareClick(e) {
       const testBoard = copyBoard(boardState);
       testBoard[move.row][move.col] = clickedPiece;
       testBoard[selectedSquare.row][selectedSquare.col] = null;
-      return !isInCheck(testBoard, currentPlayer);
+      return !isInCheck(testBoard, currentPlayer, lastMove);
     });
     highlightLegalMoves();
   } else {
@@ -111,41 +114,77 @@ function onSquareClick(e) {
 
     makeMove(selectedSquare, { row, col });
   }
+  console.log('Clicked square', row, col, 'Piece:', clickedPiece);
+  console.log('Current player:', currentPlayer);
+
 }
 
 function makeMove(from, to) {
   const piece = boardState[from.row][from.col];
+
+  // En passant logic
+  if (
+    piece.toLowerCase() === 'p' &&
+    Math.abs(to.col - from.col) === 1 &&
+    !boardState[to.row][to.col] &&
+    lastMove &&
+    lastMove.piece.toLowerCase() === 'p' &&
+    Math.abs(lastMove.to.row - lastMove.from.row) === 2 &&
+    lastMove.to.row === from.row &&
+    lastMove.to.col === to.col
+  ) 
+
+  {
+    const dir = currentPlayer === 'white' ? 1 : -1;
+    const capturedRow = to.row + dir;
+    boardState[capturedRow][to.col] = null;
+  }
+
+
   boardState[to.row][to.col] = piece;
   boardState[from.row][from.col] = null;
+  lastMove = { piece, from, to };
 
   selectedSquare = null;
   legalMoves = [];
 
-  if (isCheckmate(boardState, currentPlayer === 'white' ? 'black' : 'white')) {
+  const opponent = currentPlayer === 'white' ? 'black' : 'white';
+
+  if (isCheckmate(boardState, opponent)) {
     gameStatusDiv.textContent = `Checkmate! ${currentPlayer.charAt(0).toUpperCase() + currentPlayer.slice(1)} wins.`;
     gameOver = true;
-  } else if (isInCheck(boardState, currentPlayer === 'white' ? 'black' : 'white')) {
+  } else if (isInCheck(boardState, opponent)) {
     gameStatusDiv.textContent = 'Check!';
   } else {
     gameStatusDiv.textContent = '';
   }
 
-  currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
+  currentPlayer = opponent;
   updateTurnIndicator();
   renderBoard();
+  console.log(`Move made by ${currentPlayer}: ${piece} from`, from, 'to', to);
+  console.log('Next player:', currentPlayer === 'white' ? 'black' : 'white');
+
 }
+
+
 
 function getLegalMovesForPiece(piece, from, board) {
   const moves = [];
+
   for (let r = 0; r < 8; r++) {
     for (let c = 0; c < 8; c++) {
-      if (isLegalMove(piece, from, { row: r, col: c }, board)) {
+      if (isLegalMove(piece, from, { row: r, col: c }, board, false, lastMove)) 
+        {
         moves.push({ row: r, col: c });
       }
+
     }
   }
+
   return moves;
 }
+
 
 function copyBoard(board) {
   return board.map(row => row.slice());

@@ -75,7 +75,7 @@ function isPathClear(from, to, board) {
   return true;
 }
 
-function isSquareAttacked(board, row, col, attackerIsWhite) {
+function isSquareAttacked(board, row, col, attackerIsWhite, lastMove = null) {
   for (let r = 0; r < 8; r++) {
     for (let c = 0; c < 8; c++) {
       const piece = board[r][c];
@@ -105,7 +105,7 @@ function findKingPosition(board, isWhite) {
   return null;
 }
 
-function isLegalMove(piece, from, to, board, skipCheckTest = false) {
+function isLegalMove(piece, from, to, board, skipCheckTest = false, lastMove = null) {
   const dr = to.row - from.row;
   const dc = to.col - from.col;
   const pieceType = piece.toLowerCase();
@@ -115,57 +115,95 @@ function isLegalMove(piece, from, to, board, skipCheckTest = false) {
   if (target && isWhitePiece(target) === isWhite) return false;
 
   let valid = false;
+  let enPassantCapture = false;
 
   switch (pieceType) {
     case 'p': {
       const dir = isWhite ? -1 : 1;
       const startRow = isWhite ? 6 : 1;
+
+      // Standard move
       if (dc === 0 && dr === dir && !target) valid = true;
+
+      // Double-step move
       else if (
         dc === 0 &&
         dr === 2 * dir &&
         from.row === startRow &&
         !target &&
         !board[from.row + dir][from.col]
-      )
+      ) valid = true;
+
+      // Normal diagonal capture
+      else if (Math.abs(dc) === 1 && dr === dir && target && isWhitePiece(target) !== isWhite) {
         valid = true;
-      else if (Math.abs(dc) === 1 && dr === dir && target && isWhitePiece(target) !== isWhite)
+
+      // En passant capture
+      } else if (
+        Math.abs(dc) === 1 &&
+        dr === dir &&
+        lastMove &&
+        lastMove.piece.toLowerCase() === 'p' &&
+        Math.abs(lastMove.to.row - lastMove.from.row) === 2 &&
+        lastMove.to.row === from.row &&
+        lastMove.to.col === to.col
+      ) {
         valid = true;
+        enPassantCapture = true;
+      }
+
       break;
     }
+
     case 'n':
       valid = (Math.abs(dr) === 2 && Math.abs(dc) === 1) || (Math.abs(dr) === 1 && Math.abs(dc) === 2);
       break;
+
     case 'b':
       valid = Math.abs(dr) === Math.abs(dc) && isPathClear(from, to, board);
       break;
+
     case 'r':
       valid = (dr === 0 || dc === 0) && isPathClear(from, to, board);
       break;
+
     case 'q':
       valid = (dr === 0 || dc === 0 || Math.abs(dr) === Math.abs(dc)) && isPathClear(from, to, board);
       break;
+
     case 'k':
       valid = Math.abs(dr) <= 1 && Math.abs(dc) <= 1;
       break;
+
     default:
       return false;
   }
 
   if (!valid) return false;
 
-  if (skipCheckTest) return true;
+  if (skipCheckTest) {
+    return true;
+  }
 
-  // Simulate the move and check if own king would be in check
+  // Simulate the move on a temp board to check for checks
   const temp = board.map(row => row.slice());
+
+  // Handle en passant capture on temp board
+  if (enPassantCapture) {
+    const capturedRow = from.row; // pawn captured is on from.row for en passant
+    temp[capturedRow][to.col] = null;
+  }
+
   temp[to.row][to.col] = piece;
   temp[from.row][from.col] = null;
+
   const kingPos = pieceType === 'k' ? to : findKingPosition(temp, isWhite);
 
   return !isSquareAttacked(temp, kingPos.row, kingPos.col, !isWhite);
 }
 
-function isInCheck(board, currentPlayer) {
+
+function isInCheck(board, currentPlayer, lastMove = null) {
   const isWhite = currentPlayer === 'white';
   const kingPos = findKingPosition(board, isWhite);
   if (!kingPos) return false;
