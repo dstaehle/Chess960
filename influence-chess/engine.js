@@ -103,7 +103,9 @@ function isSquareAttacked(board, row, col, attackerIsWhite, lastMove = null) {
     for (let c = 0; c < 8; c++) {
       const piece = board[r][c];
       if (piece && (attackerIsWhite ? isWhitePiece(piece) : isBlackPiece(piece))) {
-        if (isLegalMove(piece, { row: r, col: c }, { row, col }, board, true)) {
+        const from = { row: r, col: c };
+        const to = { row, col };
+        if (isLegalMove(piece, from, to, board, true, lastMove)) {
           return true;
         }
       }
@@ -111,6 +113,7 @@ function isSquareAttacked(board, row, col, attackerIsWhite, lastMove = null) {
   }
   return false;
 }
+
 
 function findKingPosition(board, isWhite) {
   for (let r = 0; r < 8; r++) {
@@ -129,6 +132,10 @@ function findKingPosition(board, isWhite) {
 }
 
 function isLegalMove(piece, from, to, board, skipCheckTest = false, lastMove = null) {
+  if (!from || !to || !board || !piece) return false;
+  if (typeof from.row !== "number" || typeof from.col !== "number" ||
+      typeof to.row !== "number" || typeof to.col !== "number") return false;
+
   const dr = to.row - from.row;
   const dc = to.col - from.col;
   const pieceType = piece.toLowerCase();
@@ -165,11 +172,10 @@ function isLegalMove(piece, from, to, board, skipCheckTest = false, lastMove = n
       } else if (
         Math.abs(dc) === 1 &&
         dr === dir &&
-        lastMove &&
-        lastMove.piece.toLowerCase() === 'p' &&
-        Math.abs(lastMove.to.row - lastMove.from.row) === 2 &&
-        lastMove.to.row === from.row &&
-        lastMove.to.col === to.col
+        lastMove?.piece?.toLowerCase?.() === 'p' &&
+        Math.abs(lastMove?.to?.row - lastMove?.from?.row) === 2 &&
+        lastMove?.to?.row === from.row &&
+        lastMove?.to?.col === to.col
       ) {
         valid = true;
         enPassantCapture = true;
@@ -213,7 +219,7 @@ function isLegalMove(piece, from, to, board, skipCheckTest = false, lastMove = n
 
   // Handle en passant capture on temp board
   if (enPassantCapture) {
-    const capturedRow = from.row; // pawn captured is on from.row for en passant
+    const capturedRow = from.row;
     temp[capturedRow][to.col] = null;
   }
 
@@ -224,6 +230,45 @@ function isLegalMove(piece, from, to, board, skipCheckTest = false, lastMove = n
 
   return !isSquareAttacked(temp, kingPos.row, kingPos.col, !isWhite);
 }
+
+
+
+function getAllKnightInfluence(board) {
+  const influence = [];
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      const piece = board[row][col];
+      if (piece && piece.toLowerCase() === 'n') {
+        const moves = getKnightInfluenceAt(row, col, board);
+        influence.push(...moves);
+      }
+    }
+  }
+  return influence;
+}
+
+function getKnightInfluenceAt(row, col, board) {
+  const moves = [
+    { dr: -2, dc: -1 }, { dr: -2, dc: 1 },
+    { dr: -1, dc: -2 }, { dr: -1, dc: 2 },
+    { dr: 1, dc: -2 },  { dr: 1, dc: 2 },
+    { dr: 2, dc: -1 },  { dr: 2, dc: 1 }
+  ];
+
+  const influence = [];
+
+  for (const move of moves) {
+    const newRow = row + move.dr;
+    const newCol = col + move.dc;
+
+    if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8) {
+      influence.push({ row: newRow, col: newCol });
+    }
+  }
+
+  return influence;
+}
+
 
 
 function isInCheck(board, currentPlayer, lastMove = null) {
@@ -268,5 +313,7 @@ export {
   hasAnyLegalMoves,
   findKingPosition,
   isSquareAttacked,
-  isPathClear
+  isPathClear,
+  getKnightInfluenceAt,
+  getAllKnightInfluence,
 };

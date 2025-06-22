@@ -36,7 +36,9 @@ body {
   font-family: sans-serif;
   cursor: pointer;
   transition: background-color 0.3s ease;
+  position: relative; /* Required for ::after overlays */
 }
+
 
 .square:hover {
   filter: brightness(1.15);
@@ -57,16 +59,6 @@ body {
   border-radius: 8px;
 }
 
-/* Piece styling */
-/*.white-piece {
-  color: #fff;
-  text-shadow:
-    -1px -1px 0 #000,
-    1px -1px 0 #000,
-    -1px 1px 0 #000,
-    1px 1px 0 #000;
-}
-*/
 .white-piece {
   color: rgb(0, 229, 255) !important;
 }
@@ -78,3 +70,127 @@ body {
     -1px 1px 0 #fff,
     1px 1px 0 #fff;
 }
+
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 100;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.6);
+  justify-content: center;
+  align-items: center;
+}
+
+.modal[aria-hidden="false"] {
+  display: flex;
+}
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.promotion-options {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 10px;
+}
+
+.promo-btn {
+  padding: 8px 12px;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.knight-influence::after {
+  content: "+";
+  font-size: 14px;
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  color: red;
+  pointer-events: none;
+}
+
+.influence-tl::before {
+  content: '×';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  font-size: 14px;
+  color: red;
+  pointer-events: none;
+}
+
+.influence-tr::before {
+  content: '×';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 14px;
+  color: red;
+  pointer-events: none;
+}
+
+.influence-bl::before {
+  content: '×';
+  position: absolute;
+  bottom: 2px;
+  left: 2px;
+  font-size: 14px;
+  color: red;
+  pointer-events: none;
+}
+
+.influence-br::before {
+  content: '×';
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  font-size: 14px;
+  color: red;
+  pointer-events: none;
+}
+/* Shared overlay style */
+.square::before,
+.square::after {
+  pointer-events: none;
+  position: absolute;
+  font-size: 14px;
+  color: darkorange;
+}
+
+.square {
+  position: relative;
+}
+
+.influence-marker {
+  position: absolute;
+  font-size: 14px;
+  font-weight: bold;
+  pointer-events: none;
+}
+
+.marker-tl { top: 2px; left: 2px; }
+.marker-tr { top: 2px; right: 2px; }
+.marker-bl { bottom: 2px; left: 2px; }
+.marker-br { bottom: 2px; right: 2px; }
+
+.marker-top    { top: 2px; left: 50%; transform: translateX(-50%); }
+.marker-bottom { bottom: 2px; left: 50%; transform: translateX(-50%); }
+.marker-left   { left: 2px; top: 50%; transform: translateY(-50%); }
+.marker-right  { right: 2px; top: 50%; transform: translateY(-50%); }
+
+.white-influence {
+  color: #00bcd4; /* Light blue to match your white pieces */
+}
+
+.black-influence {
+  color: #8B0000; /* Dark red for black knights */
+}
+
