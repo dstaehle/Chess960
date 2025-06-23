@@ -157,7 +157,7 @@ function promotePawn(newPieceChar) {
 function getLegalMovesForPiece(piece, from, board, lastMove) {
   const moves = [];
 
-  if (!from || typeof from.row !== 'number' || typeof from.col !== 'number') return moves;
+  if (!piece || !from || typeof from.row !== 'number' || typeof from.col !== 'number') return moves;
 
   const isWhite = isWhitePiece(piece);
   const side = isWhite ? 'white' : 'black';
