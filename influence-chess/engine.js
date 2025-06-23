@@ -152,35 +152,17 @@ function isLegalMove(piece, from, to, board, skipCheckTest = false, lastMove = n
       const dir = isWhite ? -1 : 1;
       const startRow = isWhite ? 6 : 1;
 
-      // Standard move
       if (dc === 0 && dr === dir && !target) valid = true;
-
-      // Double-step move
-      else if (
-        dc === 0 &&
-        dr === 2 * dir &&
-        from.row === startRow &&
-        !target &&
-        !board[from.row + dir][from.col]
-      ) valid = true;
-
-      // Normal diagonal capture
-      else if (Math.abs(dc) === 1 && dr === dir && target && isWhitePiece(target) !== isWhite) {
-        valid = true;
-
-      // En passant capture
-      } else if (
-        Math.abs(dc) === 1 &&
-        dr === dir &&
+      else if (dc === 0 && dr === 2 * dir && from.row === startRow && !target && !board[from.row + dir][from.col]) valid = true;
+      else if (Math.abs(dc) === 1 && dr === dir && target && isWhitePiece(target) !== isWhite) valid = true;
+      else if (Math.abs(dc) === 1 && dr === dir &&
         lastMove?.piece?.toLowerCase?.() === 'p' &&
-        Math.abs(lastMove?.to?.row - lastMove?.from?.row) === 2 &&
-        lastMove?.to?.row === from.row &&
-        lastMove?.to?.col === to.col
-      ) {
+        Math.abs(lastMove.to.row - lastMove.from.row) === 2 &&
+        lastMove.to.row === from.row &&
+        lastMove.to.col === to.col) {
         valid = true;
         enPassantCapture = true;
       }
-
       break;
     }
 
@@ -200,9 +182,50 @@ function isLegalMove(piece, from, to, board, skipCheckTest = false, lastMove = n
       valid = (dr === 0 || dc === 0 || Math.abs(dr) === Math.abs(dc)) && isPathClear(from, to, board);
       break;
 
-    case 'k':
-      valid = Math.abs(dr) <= 1 && Math.abs(dc) <= 1;
+    case 'k': {
+      if (Math.abs(dr) <= 1 && Math.abs(dc) <= 1) {
+        valid = true;
+        break;
+      }
+
+      // Handle Chess960 castling
+      const castlingTargets = {
+        white: { kingSide: 6, queenSide: 2, row: 7 },
+        black: { kingSide: 6, queenSide: 2, row: 0 }
+      };
+      const side = isWhite ? 'white' : 'black';
+      const castlingRow = castlingTargets[side].row;
+      const kingsideTarget = castlingTargets[side].kingSide;
+      const queensideTarget = castlingTargets[side].queenSide;
+
+      if (from.row === castlingRow && to.row === castlingRow && (to.col === kingsideTarget || to.col === queensideTarget)) {
+        const kingStartCol = from.col;
+        const rookCol = to.col === kingsideTarget
+          ? board[castlingRow].findIndex(p => p?.toLowerCase() === 'r' && (to.col > kingStartCol ? true : false))
+          : board[castlingRow].findIndex(p => p?.toLowerCase() === 'r' && (to.col < kingStartCol ? true : false));
+
+        const rook = board[castlingRow][rookCol];
+        if (!rook || rook.toLowerCase() !== 'r') return false;
+
+        // Check path is clear between king and rook
+        const step = to.col > kingStartCol ? 1 : -1;
+        for (let c = kingStartCol + step; c !== rookCol; c += step) {
+          if (board[castlingRow][c]) return false;
+        }
+
+        // Simulate intermediate king moves to ensure not in check
+        const pathCols = [kingStartCol, kingStartCol + step, to.col];
+        for (const c of pathCols) {
+          const temp = board.map(r => r.slice());
+          temp[castlingRow][kingStartCol] = null;
+          temp[castlingRow][c] = piece;
+          if (isInCheck(temp, isWhite ? 'white' : 'black')) return false;
+        }
+
+        valid = true;
+      }
       break;
+    }
 
     default:
       return false;
@@ -210,26 +233,18 @@ function isLegalMove(piece, from, to, board, skipCheckTest = false, lastMove = n
 
   if (!valid) return false;
 
-  if (skipCheckTest) {
-    return true;
-  }
+  if (skipCheckTest) return true;
 
-  // Simulate the move on a temp board to check for checks
   const temp = board.map(row => row.slice());
-
-  // Handle en passant capture on temp board
-  if (enPassantCapture) {
-    const capturedRow = from.row;
-    temp[capturedRow][to.col] = null;
-  }
+  if (enPassantCapture) temp[from.row][to.col] = null;
 
   temp[to.row][to.col] = piece;
   temp[from.row][from.col] = null;
 
   const kingPos = pieceType === 'k' ? to : findKingPosition(temp, isWhite);
-
   return !isSquareAttacked(temp, kingPos.row, kingPos.col, !isWhite);
 }
+
 
 
 

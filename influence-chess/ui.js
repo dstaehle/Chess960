@@ -9,7 +9,8 @@ import {
   resetGame,
   makeMove,
   promotePawn,
-  getLastMove
+  getLastMove,
+  getCastlingStatus
 } from './game.js';
 
 import { PIECES, getAllKnightInfluence, isWhitePiece } from './engine.js';
@@ -121,10 +122,12 @@ function handleClick(row, col) {
   } else {
     const piece = board[selectedSquare.row][selectedSquare.col];
     const legalMoves = getLegalMovesForPiece(piece, selectedSquare, board, getLastMove());
+
     const move = legalMoves.find(m => m.row === row && m.col === col);
 
     if (move) {
-      const result = makeMove(selectedSquare, { row, col });
+      // 🆕 Pass full move metadata for things like castling
+      const result = makeMove(selectedSquare, { row, col }, move);
 
       if (result?.requiresPromotion) {
         console.log("🛑 Promotion required");
@@ -141,8 +144,6 @@ function handleClick(row, col) {
     clearHighlights();
   }
 }
-
-
 
 
 
@@ -215,3 +216,5 @@ document.addEventListener("DOMContentLoaded", () => {
   initializeGame();
   updateBoard();
 });
+
+document.getElementById("castlingStatus").textContent = getCastlingStatus();
