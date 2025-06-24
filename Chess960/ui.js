@@ -157,9 +157,42 @@ export function updateBoard() {
   }
 
   renderInfluenceMap(influenceMap);
+  maybeMakeBotMove();
   turnIndicator.textContent = `${getCurrentPlayer()}'s Turn`;
   gameStatusDiv.textContent = getGameStatus() || "";
 }
+
+function maybeMakeBotMove() {
+  const currentPlayer = getCurrentPlayer();
+  if (currentPlayer !== "black") return;
+
+  // Small delay for realism
+  setTimeout(() => {
+    const board = getBoardState();
+    let legalMoves = [];
+
+    for (let fromRow = 0; fromRow < 8; fromRow++) {
+      for (let fromCol = 0; fromCol < 8; fromCol++) {
+        const piece = board[fromRow][fromCol];
+        if (!piece || piece !== piece.toLowerCase()) continue; // only black pieces
+
+        const from = { row: fromRow, col: fromCol };
+        const moves = getLegalMovesForPiece(piece, from, board, getLastMove());
+
+        for (const move of moves) {
+          legalMoves.push({ from, to: { row: move.row, col: move.col }, meta: move });
+        }
+      }
+    }
+
+    if (legalMoves.length === 0) return;
+
+    const move = legalMoves[Math.floor(Math.random() * legalMoves.length)];
+    makeMove(move.from, move.to, move.meta);
+    updateBoard();
+  }, 500); // delay in ms
+}
+
 
 function renderInfluenceMap(influenceMap) {
   document.querySelectorAll('.influence-svg').forEach(svg => svg.remove());
