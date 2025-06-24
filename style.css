@@ -61,7 +61,7 @@ body {
 }
 
 .black-piece {
-  color: #3f0505;
+  color: #0c0000;
   text-shadow:
     -1px -1px 0 #fff,
      1px -1px 0 #fff,
@@ -128,3 +128,30 @@ body {
 .black-influence {
   color: #8B0000;
 }
+
+.piece-symbol {
+  position: relative;
+  z-index: 2;
+  font-size: 52px;
+  pointer-events: none;
+}
+
+.influence-white {
+  fill: #8acbdd;
+  stroke: #00bcd4;
+}
+.influence-black {
+  fill: #F9D4D4;
+  stroke: #8B0000;
+}
+
+
+.knight-svg-text {
+  stroke: none !important;
+  paint-order: fill !important;
+  fill-opacity: 1 !important;
+  font-weight: bold;
+  font-family: sans-serif;
+  pointer-events: none;
+}
+
