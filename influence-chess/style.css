@@ -1,5 +1,4 @@
-/* style.css */
-
+/* Layout & base styles */
 body {
   font-family: sans-serif;
   display: flex;
@@ -14,7 +13,7 @@ body {
   grid-template-columns: repeat(8, 60px);
   grid-template-rows: repeat(8, 60px);
   border: 2px solid #333333;
-  user-select: none; /* Prevent text selection on click-drag */
+  user-select: none;
 }
 
 #turn-indicator {
@@ -33,44 +32,50 @@ body {
   justify-content: center;
   align-items: center;
   font-size: 36px;
-  font-family: sans-serif;
   cursor: pointer;
   transition: background-color 0.3s ease;
-  position: relative; /* Required for ::after overlays */
+  position: relative;   /* Enables absolute-positioned children like SVG */
+  overflow: hidden;     /* Prevent visual spillover */
 }
 
+/* Square colors */
+.light-square {
+  background-color: #f0d9b5;
+}
+.dark-square {
+  background-color: #779556;
+}
 
 .square:hover {
   filter: brightness(1.15);
 }
 
-/* Background colors */
-.light-square {
-  background-color: #f0d9b5; /* classic light tan */
+/* Piece coloring */
+.white-piece {
+  color: #ffffff !important;
+  text-shadow:
+    -1px -1px 0 #000,
+    1px -1px 0 #000,
+    -1px 1px 0 #000,
+    1px 1px 0 #000;
 }
 
-.dark-square {
-  background-color: #779556; /* softer green typical of chessboards */
+.black-piece {
+  color: #3f0505;
+  text-shadow:
+    -1px -1px 0 #fff,
+     1px -1px 0 #fff,
+    -1px  1px 0 #fff,
+     1px  1px 0 #fff;
 }
 
-/* Highlight for legal moves */
+/* Move highlight */
 .highlight {
   box-shadow: inset 0 0 10px 4px rgba(255, 215, 0, 0.7);
   border-radius: 8px;
 }
 
-.white-piece {
-  color: rgb(0, 229, 255) !important;
-}
-.black-piece {
-  color: #3f0505;
-  text-shadow:
-    -1px -1px 0 #fff,
-    1px -1px 0 #fff,
-    -1px 1px 0 #fff,
-    1px 1px 0 #fff;
-}
-
+/* Modal (e.g. promotion) */
 .modal {
   display: none;
   position: fixed;
@@ -107,90 +112,19 @@ body {
   cursor: pointer;
 }
 
-.knight-influence::after {
-  content: "+";
-  font-size: 14px;
+/* SVG overlay for influence */
+.influence-svg {
   position: absolute;
-  top: 2px;
-  right: 2px;
-  color: red;
+  top: 0;
+  left: 0;
   pointer-events: none;
+  z-index: 1;
 }
 
-.influence-tl::before {
-  content: '×';
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  font-size: 14px;
-  color: red;
-  pointer-events: none;
-}
-
-.influence-tr::before {
-  content: '×';
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  font-size: 14px;
-  color: red;
-  pointer-events: none;
-}
-
-.influence-bl::before {
-  content: '×';
-  position: absolute;
-  bottom: 2px;
-  left: 2px;
-  font-size: 14px;
-  color: red;
-  pointer-events: none;
-}
-
-.influence-br::before {
-  content: '×';
-  position: absolute;
-  bottom: 2px;
-  right: 2px;
-  font-size: 14px;
-  color: red;
-  pointer-events: none;
-}
-/* Shared overlay style */
-.square::before,
-.square::after {
-  pointer-events: none;
-  position: absolute;
-  font-size: 14px;
-  color: darkorange;
-}
-
-.square {
-  position: relative;
-}
-
-.influence-marker {
-  position: absolute;
-  font-size: 14px;
-  font-weight: bold;
-  pointer-events: none;
-}
-
-.marker-tl { top: 2px; left: 2px; }
-.marker-tr { top: 2px; right: 2px; }
-.marker-bl { bottom: 2px; left: 2px; }
-.marker-br { bottom: 2px; right: 2px; }
-
-.marker-top    { top: 2px; left: 50%; transform: translateX(-50%); }
-.marker-bottom { bottom: 2px; left: 50%; transform: translateX(-50%); }
-.marker-left   { left: 2px; top: 50%; transform: translateY(-50%); }
-.marker-right  { right: 2px; top: 50%; transform: translateY(-50%); }
-
+/* Influence colors (used by SVG logic) */
 .white-influence {
-  color: #00bcd4; /* Light blue to match your white pieces */
+  color: #00bcd4;
 }
-
 .black-influence {
-  color: #8B0000; /* Dark red for black knights */
+  color: #8B0000;
 }
-
