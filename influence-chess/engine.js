@@ -316,6 +316,163 @@ function isCheckmate(board, currentPlayer) {
   return isInCheck(board, currentPlayer) && !hasAnyLegalMoves(board, currentPlayer);
 }
 
+function getPawnInfluenceAt(row, col, piece, board) {
+  const isWhite = isWhitePiece(piece);
+  const dir = isWhite ? -1 : 1;
+  const influence = [];
+
+  for (let dc of [-1, 1]) {
+    const r = row + dir;
+    const c = col + dc;
+    if (r >= 0 && r < 8 && c >= 0 && c < 8) {
+      influence.push({ row: r, col: c });
+    }
+  }
+
+  return influence;
+}
+
+export function getBishopInfluenceAt(row, col, board) {
+  const directions = [
+    [-1, -1], [-1, 1], [1, -1], [1, 1]  // NW, NE, SW, SE
+  ];
+  const influence = [];
+
+  for (const [dr, dc] of directions) {
+    let r = row + dr;
+    let c = col + dc;
+
+    while (r >= 0 && r <= 7 && c >= 0 && c <= 7) {
+      influence.push({ row: r, col: c });
+      if (board[r][c]) break;  // Stop on first piece (still add it)
+      r += dr;
+      c += dc;
+    }
+  }
+
+  return influence;
+}
+
+function getRookInfluenceAt(row, col, board) {
+  const moves = [];
+  const directions = [
+    { dr: -1, dc: 0 }, // up
+    { dr: 1, dc: 0 },  // down
+    { dr: 0, dc: -1 }, // left
+    { dr: 0, dc: 1 }   // right
+  ];
+
+  for (const { dr, dc } of directions) {
+    let r = row + dr;
+    let c = col + dc;
+
+    while (r >= 0 && r < 8 && c >= 0 && c < 8) {
+      if (board[r][c]) {
+        // Stop at first occupied square
+        moves.push({ row: r, col: c });
+        break;
+      }
+      moves.push({ row: r, col: c });
+      r += dr;
+      c += dc;
+    }
+  }
+
+  return moves;
+}
+
+function getKingInfluenceAt(row, col, board) {
+  const moves = [
+    [-1, -1], [-1, 0], [-1, 1],
+    [ 0, -1],          [ 0, 1],
+    [ 1, -1], [ 1, 0], [ 1, 1]
+  ];
+
+  return moves
+    .map(([dr, dc]) => ({ row: row + dr, col: col + dc }))
+    .filter(({ row, col }) => row >= 0 && row < 8 && col >= 0 && col < 8);
+}
+
+function getQueenInfluenceAt(row, col, board) {
+  const influence = [];
+
+  // Combine bishop-like moves
+  const deltas = [
+    [-1, -1], [-1, 1], [1, -1], [1, 1], // diagonals
+    [-1, 0], [1, 0], [0, -1], [0, 1]    // straight lines
+  ];
+
+  for (const [dr, dc] of deltas) {
+    let r = row + dr;
+    let c = col + dc;
+    while (r >= 0 && r < 8 && c >= 0 && c < 8) {
+      influence.push({ row: r, col: c });
+      if (board[r][c]) break; // Stop if there's a piece in the way
+      r += dr;
+      c += dc;
+    }
+  }
+
+  return influence;
+}
+
+
+function buildInfluenceMap(board) {
+  const influenceMap = [...Array(8)].map(() =>
+    [...Array(8)].map(() => ({
+      white: [],
+      black: []
+    }))
+  );
+
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      const piece = board[row][col];
+      if (!piece) continue;
+
+      const isWhite = isWhitePiece(piece);
+      const type = piece.toLowerCase();
+
+      let influenceSquares = [];
+
+      switch (type) {
+        case 'n':
+          influenceSquares = getKnightInfluenceAt(row, col, board);
+          break;
+        case 'p':
+          influenceSquares = getPawnInfluenceAt(row, col, piece, board);
+          break;
+        case 'b':
+          influenceSquares = getBishopInfluenceAt(row, col, board);
+          break;
+        case 'r':
+          influenceSquares = getRookInfluenceAt(row, col, board);
+          break;
+        case 'q':
+          influenceSquares = getQueenInfluenceAt(row, col, board);
+          break;
+        case 'k':
+          influenceSquares = getKingInfluenceAt(row, col, board);
+          break;
+        default:
+          break;
+
+  break;
+      }
+
+      for (const { row: r, col: c } of influenceSquares) {
+        if (r < 0 || r > 7 || c < 0 || c > 7) continue;
+        const entry = { piece: type, from: { row, col } };
+        if (isWhite) influenceMap[r][c].white.push(entry);
+        else influenceMap[r][c].black.push(entry);
+      }
+    }
+  }
+
+  return influenceMap;
+}
+
+
 export {
   PIECES,
   isWhitePiece,
@@ -331,4 +488,6 @@ export {
   isPathClear,
   getKnightInfluenceAt,
   getAllKnightInfluence,
+  buildInfluenceMap,
+  getPawnInfluenceAt
 };

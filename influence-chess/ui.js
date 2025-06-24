@@ -13,7 +13,7 @@ import {
   getCastlingStatus
 } from './game.js';
 
-import { PIECES, getAllKnightInfluence, isWhitePiece } from './engine.js';
+import { PIECES, buildInfluenceMap, getAllKnightInfluence, isWhitePiece } from './engine.js';
 
 // DOM references
 const boardEl = document.getElementById("board");
@@ -39,51 +39,6 @@ export function createBoard() {
     }
   }
 }
-
-function applyKnightInfluence(board) {
-  // Clear any old indicators first
-  document.querySelectorAll(".influence-marker").forEach(el => el.remove());
-
-  for (let row = 0; row < 8; row++) {
-    for (let col = 0; col < 8; col++) {
-      const piece = board[row][col];
-      if (!piece || piece.toLowerCase() !== 'n') continue;
-
-      const isWhite = piece === piece.toUpperCase();
-      const offsets = [
-        [2, 1], [2, -1], [-2, 1], [-2, -1],
-        [1, 2], [1, -2], [-1, 2], [-1, -2]
-      ];
-
-      for (const [dr, dc] of offsets) {
-        const r = row + dr;
-        const c = col + dc;
-        if (r < 0 || r > 7 || c < 0 || c > 7) continue;
-
-        const square = document.querySelector(`.square[data-row="${r}"][data-col="${c}"]`);
-        if (!square) continue;
-
-        const positions = isWhite
-          ? ['top', 'bottom', 'left', 'right']
-          : ['tl', 'tr', 'bl', 'br'];
-
-        for (const pos of positions) {
-          const marker = document.createElement("span");
-          marker.classList.add(
-            "influence-marker",
-            `marker-${pos}`,
-            isWhite ? "white-influence" : "black-influence"
-          );
-          marker.textContent = isWhite ? '+' : 'x';
-          square.appendChild(marker);
-        }
-      }
-    }
-  }
-}
-
-
-
 
 function clearHighlights() {
   document.querySelectorAll('.square').forEach(sq => {
@@ -168,6 +123,8 @@ function showPromotionModal(isWhite) {
 
 export function updateBoard() {
   const board = getBoardState();
+  const influenceMap = buildInfluenceMap(board);
+
 
   for (let row = 0; row < 8; row++) {
     for (let col = 0; col < 8; col++) {
@@ -199,10 +156,171 @@ export function updateBoard() {
     }
   }
 
-  applyKnightInfluence(board);
+  renderInfluenceMap(influenceMap);
   turnIndicator.textContent = `${getCurrentPlayer()}'s Turn`;
   gameStatusDiv.textContent = getGameStatus() || "";
 }
+
+function renderInfluenceMap(influenceMap) {
+  document.querySelectorAll('.influence-svg').forEach(svg => svg.remove());
+
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      const square = document.querySelector(`.square[data-row="${row}"][data-col="${col}"]`);
+      if (!square) continue;
+
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("class", "influence-svg");
+      svg.setAttribute("viewBox", "0 0 60 60");
+      svg.setAttribute("width", "60");
+      svg.setAttribute("height", "60");
+
+      const cell = influenceMap[row][col];
+
+      const drawSymbol = (side, piece, index) => {
+        const color = side === "white" ? "#00bcd4" : "#8B0000";
+
+        if (piece.toLowerCase() === 'n') {
+          const positions = side === "white"
+            ? [ // White knight '+' markers
+                { x: 30, y: 10 }, { x: 50, y: 30 }, { x: 30, y: 54 }, { x: 10, y: 30 }
+              ]
+            : [ // Black knight '×' markers
+                { x: 4, y: 10 }, { x: 46, y: 10 }, { x: 4, y: 54 }, { x: 46, y: 54 }
+              ];
+
+          const symbol = side === "white" ? "+" : "×";
+          for (const pos of positions) {
+            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            text.setAttribute("x", pos.x);
+            text.setAttribute("y", pos.y);
+            text.setAttribute("fill", color);
+            text.setAttribute("font-size", "12");
+            text.textContent = symbol;
+            svg.appendChild(text);
+          }
+        }
+
+        if (piece === 'p') {
+        const lines = side === "white"
+          ? [
+              [20, 55, 40, 55], // full-width line at bottom edge of controlled square
+              [20, 55, 40, 55]
+            ]
+          : [
+              [20, 5, 40, 5],   // full-width line at top edge of controlled square
+              [20, 5, 40, 5]
+            ];
+
+        for (const [x1, y1, x2, y2] of lines) {
+          const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+          line.setAttribute("x1", x1);
+          line.setAttribute("y1", y1);
+          line.setAttribute("x2", x2);
+          line.setAttribute("y2", y2);
+          line.setAttribute("stroke", color);
+          line.setAttribute("stroke-width", "2");
+          line.setAttribute("stroke-linecap", "round");
+          svg.appendChild(line);
+        }
+      }
+
+      if (piece === 'b') {
+        const from = cell[side].find(inf => inf.piece === 'b' && inf.from)?.from;
+        if (!from) return;
+
+        const dx = col - from.col;
+        const dy = row - from.row;
+
+        // Determine slash direction based on relative position
+        let line;
+        if (dx * dy > 0) {
+          // same sign: draw top-left to bottom-right
+          line = [5, 5, 55, 55];
+        } else {
+          // opposite sign: draw bottom-left to top-right
+          line = [5, 55, 55, 5];
+        }
+
+        const bishopLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        bishopLine.setAttribute("x1", line[0]);
+        bishopLine.setAttribute("y1", line[1]);
+        bishopLine.setAttribute("x2", line[2]);
+        bishopLine.setAttribute("y2", line[3]);
+        bishopLine.setAttribute("stroke", color);
+        bishopLine.setAttribute("stroke-width", "2");
+        bishopLine.setAttribute("stroke-linecap", "round");
+        svg.appendChild(bishopLine);
+      }
+
+      if (piece === 'q') {
+        const positions = side === "white"
+          ? [ { x: 30, y: 10 }, { x: 50, y: 30 }, { x: 30, y: 54 }, { x: 10, y: 30 } ] // centered on sides
+          : [ { x: 4, y: 10 }, { x: 46, y: 10 }, { x: 4, y: 54 }, { x: 46, y: 54 } ];   // corners
+
+        for (const pos of positions) {
+          const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+          circle.setAttribute("cx", pos.x);
+          circle.setAttribute("cy", pos.y);
+          circle.setAttribute("r", "3");
+          circle.setAttribute("fill", color);
+          svg.appendChild(circle);
+        }
+      }
+
+
+      if (piece === 'r') {
+        const from = cell[side].find(inf => inf.piece === 'r' && inf.from)?.from;
+        if (!from) return;
+
+        const dx = col - from.col;
+        const dy = row - from.row;
+
+        let line = null;
+
+        if (dx === 0 && dy < 0) line = [30, 5, 30, 25];     // up
+        else if (dx === 0 && dy > 0) line = [30, 55, 30, 35]; // down
+        else if (dy === 0 && dx < 0) line = [5, 30, 25, 30];  // left
+        else if (dy === 0 && dx > 0) line = [55, 30, 35, 30]; // right
+
+        if (line) {
+          const arrow = document.createElementNS("http://www.w3.org/2000/svg", "line");
+          arrow.setAttribute("x1", line[0]);
+          arrow.setAttribute("y1", line[1]);
+          arrow.setAttribute("x2", line[2]);
+          arrow.setAttribute("y2", line[3]);
+          arrow.setAttribute("stroke", color);
+          arrow.setAttribute("stroke-width", "2");
+          arrow.setAttribute("stroke-linecap", "round");
+          svg.appendChild(arrow);
+        }
+      }
+
+      if (piece === 'k') {
+        const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        rect.setAttribute("x", 0);
+        rect.setAttribute("y", 0);
+        rect.setAttribute("width", 60);
+        rect.setAttribute("height", 60);
+        rect.setAttribute("fill", side === "white" ? "#00bcd4" : "#8B0000");
+        rect.setAttribute("fill-opacity", "0.3");
+        svg.appendChild(rect);
+      }
+
+
+
+      };
+
+      cell.white.forEach((inf, i) => drawSymbol("white", inf.piece, i));
+      cell.black.forEach((inf, i) => drawSymbol("black", inf.piece, i));
+
+      square.appendChild(svg);
+    }
+  }
+}
+
+
+
 
 
 document.getElementById("playAgainBtn")?.addEventListener("click", () => {
