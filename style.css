@@ -120,6 +120,16 @@ body {
   pointer-events: none;
   z-index: 1;
 }
+.piece-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 60px;
+  height: 60px;
+  z-index: 2;
+  pointer-events: none;
+}
+
 
 /* Influence colors (used by SVG logic) */
 .white-influence {
@@ -127,13 +137,6 @@ body {
 }
 .black-influence {
   color: #c35454;
-}
-
-.piece-symbol {
-  position: relative;
-  z-index: 2;
-  font-size: 52px;
-  pointer-events: none;
 }
 
 .influence-white {
