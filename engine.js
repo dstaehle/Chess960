@@ -1,10 +1,11 @@
 // engine.js
 
-const PIECES = {
-  'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚',
-  'R': '♜', 'N': '♞', 'B': '♝', 'Q': '♛', 'K': '♚',
-  'p': '♟', 'P': '♟'
-};
+function getPieceSVG(piece) {
+  if (!piece) return null;
+  const code = piece.toLowerCase();
+  const color = piece === piece.toUpperCase() ? 'w' : 'b';
+  return `pieces/${color}${code}.svg`; // Example: pieces/alpha/wk.svg
+}
 
 function isWhitePiece(p) {
   return p && p === p.toUpperCase();
@@ -474,7 +475,6 @@ function buildInfluenceMap(board) {
 
 
 export {
-  PIECES,
   isWhitePiece,
   isBlackPiece,
   generateChess960BackRank,
@@ -489,5 +489,6 @@ export {
   getKnightInfluenceAt,
   getAllKnightInfluence,
   buildInfluenceMap,
-  getPawnInfluenceAt
+  getPawnInfluenceAt,
+  getPieceSVG
 };

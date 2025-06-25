@@ -1,6 +1,5 @@
 // game.js
 import {
-  PIECES,
   createInitialBoard,
   isLegalMove,
   isInCheck,

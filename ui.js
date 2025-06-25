@@ -13,7 +13,7 @@ import {
   getCastlingStatus
 } from './game.js';
 
-import { PIECES, buildInfluenceMap, getAllKnightInfluence, isWhitePiece } from './engine.js';
+import { buildInfluenceMap, getAllKnightInfluence, isWhitePiece } from './engine.js';
 
 // DOM references
 const boardEl = document.getElementById("board");
@@ -170,10 +170,12 @@ export function updateBoard() {
         const isWhite = pieceChar === pieceChar.toUpperCase();
         newSquare.classList.add(isWhite ? "white-piece" : "black-piece");
 
-        const pieceSpan = document.createElement("span");
-        pieceSpan.className = "piece-symbol";
-        pieceSpan.textContent = PIECES[pieceChar] || pieceChar;
-        newSquare.appendChild(pieceSpan); // Appending AFTER SVG keeps it on top
+        const pieceImg = document.createElement("img");
+        pieceImg.className = "piece-svg";
+        const pieceCode = (isWhite ? 'w' : 'b') + pieceChar.toLowerCase();
+        pieceImg.src = `pieces/alpha/${pieceCode}.svg`;
+        pieceImg.alt = pieceChar;
+        newSquare.appendChild(pieceImg);
       }
     }
   }
