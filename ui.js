@@ -172,7 +172,7 @@ export function updateBoard() {
 
         const pieceImg = document.createElement("img");
         pieceImg.className = "piece-svg";
-        const pieceCode = (isWhite ? 'w' : 'b') + pieceChar.toLowerCase();
+        const pieceCode = (isWhite ? 'w' : 'b') + pieceChar;
         pieceImg.src = `pieces/alpha/${pieceCode}.svg`;
         pieceImg.alt = pieceChar;
         newSquare.appendChild(pieceImg);
@@ -246,7 +246,6 @@ function renderInfluenceMap(influenceMap, board, lastMove) {
 
       const cell = influenceMap[row][col];
       const boardPiece = board?.[row]?.[col];
-      console.log("📌 Last move:", lastMove);
 
 
       // 🔶 Highlight last move (from/to)
