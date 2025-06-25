@@ -126,7 +126,7 @@ body {
   color: #00bcd4;
 }
 .black-influence {
-  color: #8B0000;
+  color: #c35454;
 }
 
 .piece-symbol {
@@ -141,9 +141,10 @@ body {
   stroke: #00bcd4;
 }
 .influence-black {
-  fill: #F9D4D4;
-  stroke: #8B0000;
+  fill: #fad4d4;
+  stroke: #c35454;
 }
+
 
 .knight-svg-text {
   stroke: none !important;
