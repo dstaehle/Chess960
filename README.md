@@ -4,4 +4,6 @@ Concept Chess application
 
 Link: https://dstaehle.github.io/Chess960/
 
+Further work of cleaning design and enhancing usability
+
 # Chess
