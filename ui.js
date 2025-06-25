@@ -172,7 +172,7 @@ export function updateBoard() {
 
         const pieceImg = document.createElement("img");
         pieceImg.className = "piece-svg";
-        const pieceCode = (isWhite ? 'w' : 'b') + pieceChar;
+        const pieceCode = (isWhite ? 'w' : 'b') + pieceChar.toUpperCase();
         pieceImg.src = `pieces/alpha/${pieceCode}.svg`;
         pieceImg.alt = pieceChar;
         newSquare.appendChild(pieceImg);
