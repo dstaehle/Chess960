@@ -106,6 +106,8 @@ function makeMove(from, to, moveMeta = {}) {
   }
 
   currentPlayer = opponent;
+  boardState = boardState.map(row => row.slice());
+  console.log("✅ Move made:", from, "to", to, "by", currentPlayer);
   return result;
 }
 
