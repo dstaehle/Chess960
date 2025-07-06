@@ -15,6 +15,15 @@ import {
 
 import { buildInfluenceMap, getAllKnightInfluence, isWhitePiece } from './engine.js';
 
+import {
+  renderPawnInfluence,
+  renderKnightInfluence,
+  renderBishopInfluence,
+  renderRookInfluence,
+  renderQueenInfluence,
+  renderKingInfluence
+} from './influenceRenderer.js';
+
 // DOM references
 const boardEl = document.getElementById("board");
 const turnIndicator = document.getElementById("turn-indicator");
@@ -247,10 +256,8 @@ function renderInfluenceMap(influenceMap, board, lastMove) {
       const cell = influenceMap[row][col];
       const boardPiece = board?.[row]?.[col];
 
-
-      // 🔶 Highlight last move (from/to)
-      if (typeof lastMove !== 'undefined' && lastMove) {
-        console.log("🔶 Drawing last move highlight for square:", row, col);
+      // Highlight last move (from/to)
+      if (lastMove) {
         const isFrom = lastMove.from.row === row && lastMove.from.col === col;
         const isTo = lastMove.to.row === row && lastMove.to.col === col;
         if (isFrom || isTo) {
@@ -265,326 +272,56 @@ function renderInfluenceMap(influenceMap, board, lastMove) {
         }
       }
 
-      const drawSymbol = (side, piece, index) => {
-        const color = side === "white" ? "#00bcd4" : "#8B0000";
-        const style = typeof influenceStyles !== "undefined" && influenceStyles?.[side] ? influenceStyles[side] : { fill: color, stroke: color };
+      // Dynamic blended tint based on influence
+      const whiteInf = cell.white?.length || 0;
+      const blackInf = cell.black?.length || 0;
+      const totalInf = whiteInf + blackInf;
 
-        if (piece === 'p') {
-          const sources = cell[side].filter(inf => inf.piece === 'p' && inf.from);
-          for (const inf of sources) {
-            const from = inf.from;
-            const dx = col - from.col;
-            const dy = row - from.row;
+      if (totalInf > 0) {
+        let fill = "";
 
-            if (Math.abs(dx) === 1 && ((side === "white" && dy === -1) || (side === "black" && dy === 1))) {
-              const isRight = dx > 0;
-              const line = side === "white"
-                ? isRight ? [0, 60, 30, 30] : [60, 60, 30, 30]
-                : isRight ? [0, 0, 30, 30] : [60, 0, 30, 30];
+        if (whiteInf > 0 && blackInf === 0) {
+          fill = "rgba(0, 188, 212, " + Math.min(0.1 + 0.05 * whiteInf, 0.4) + ")";
+        } else if (blackInf > 0 && whiteInf === 0) {
+          fill = "rgba(203, 83, 106, " + Math.min(0.1 + 0.05 * blackInf, 0.4) + ")";
+        } else {
+          const weightW = whiteInf / totalInf;
+          const weightB = blackInf / totalInf;
 
-              const path = document.createElementNS("http://www.w3.org/2000/svg", "line");
-              path.setAttribute("x1", line[0]);
-              path.setAttribute("y1", line[1]);
-              path.setAttribute("x2", line[2]);
-              path.setAttribute("y2", line[3]);
-              path.setAttribute("stroke", style.stroke);
-              path.setAttribute("stroke-width", "1");
-              path.setAttribute("stroke-linecap", "round");
-              svg.appendChild(path);
-            }
-          }
+          const r = Math.round(weightW * 0 + weightB * 203);
+          const g = Math.round(weightW * 188 + weightB * 83);
+          const b = Math.round(weightW * 212 + weightB * 106);
+          const opacity = Math.min(0.1 + 0.05 * totalInf, 0.4);
+
+          fill = `rgba(${r}, ${g}, ${b}, ${opacity})`;
         }
 
-        if (boardPiece && boardPiece.toLowerCase() === 'b') {
-          const bishopColor = boardPiece === 'B' ? "#00bcd4" : "#8B0000";
-          const x1 = document.createElementNS("http://www.w3.org/2000/svg", "line");
-          x1.setAttribute("x1", 10);
-          x1.setAttribute("y1", 10);
-          x1.setAttribute("x2", 50);
-          x1.setAttribute("y2", 50);
-          x1.setAttribute("stroke", bishopColor);
-          x1.setAttribute("stroke-width", "2");
-          x1.setAttribute("stroke-linecap", "round");
+        const tint = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        tint.setAttribute("x", 0);
+        tint.setAttribute("y", 0);
+        tint.setAttribute("width", 60);
+        tint.setAttribute("height", 60);
+        tint.setAttribute("fill", fill);
+        svg.appendChild(tint);
+      }
 
-          const x2 = document.createElementNS("http://www.w3.org/2000/svg", "line");
-          x2.setAttribute("x1", 50);
-          x2.setAttribute("y1", 10);
-          x2.setAttribute("x2", 10);
-          x2.setAttribute("y2", 50);
-          x2.setAttribute("stroke", bishopColor);
-          x2.setAttribute("stroke-width", "2");
-          x2.setAttribute("stroke-linecap", "round");
-
-          svg.appendChild(x1);
-          svg.appendChild(x2);
-        }
-        if (piece === 'b') {
-          const from = cell[side].find(inf => inf.piece === 'b' && inf.from)?.from;
-          if (!from) return;
-          if (from.row !== row || from.col !== col) {
-            // Normal bishop control (not occupying the square)
-            const dx = col - from.col;
-            const dy = row - from.row;
-            const line = dx * dy > 0 ? [5, 5, 55, 55] : [5, 55, 55, 5];
-            const bishopLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
-            bishopLine.setAttribute("x1", line[0]);
-            bishopLine.setAttribute("y1", line[1]);
-            bishopLine.setAttribute("x2", line[2]);
-            bishopLine.setAttribute("y2", line[3]);
-            bishopLine.setAttribute("stroke", color);
-            bishopLine.setAttribute("stroke-width", "2");
-            bishopLine.setAttribute("stroke-linecap", "round");
-            svg.appendChild(bishopLine);
-          } else {
-            // Bishop is on this square — draw both diagonals
-            const diag1 = document.createElementNS("http://www.w3.org/2000/svg", "line");
-            diag1.setAttribute("x1", 5);
-            diag1.setAttribute("y1", 5);
-            diag1.setAttribute("x2", 55);
-            diag1.setAttribute("y2", 55);
-            diag1.setAttribute("stroke", color);
-            diag1.setAttribute("stroke-width", "2");
-            diag1.setAttribute("stroke-linecap", "round");
-            svg.appendChild(diag1);
-
-            const diag2 = document.createElementNS("http://www.w3.org/2000/svg", "line");
-            diag2.setAttribute("x1", 5);
-            diag2.setAttribute("y1", 55);
-            diag2.setAttribute("x2", 55);
-            diag2.setAttribute("y2", 5);
-            diag2.setAttribute("stroke", color);
-            diag2.setAttribute("stroke-width", "2");
-            diag2.setAttribute("stroke-linecap", "round");
-            svg.appendChild(diag2);
-          }
-        }
-        if (boardPiece && boardPiece.toLowerCase() === 'q') {
-          const queenColor = boardPiece === 'Q' ? "#00bcd4" : "#8B0000";
-
-          const positions = [
-            { x: 30, y: 8 },
-            { x: 52, y: 30 },
-            { x: 30, y: 52 },
-            { x: 8, y: 30 }
-          ];
-
-          for (const pos of positions) {
-            const inner = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-            inner.setAttribute("cx", pos.x);
-            inner.setAttribute("cy", pos.y);
-            inner.setAttribute("r", "3");
-            inner.setAttribute("fill", queenColor);
-            svg.appendChild(inner);
-
-            const outer = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-            outer.setAttribute("cx", pos.x);
-            outer.setAttribute("cy", pos.y);
-            outer.setAttribute("r", "4.5");
-            outer.setAttribute("fill", "none");
-            outer.setAttribute("stroke", queenColor);
-            outer.setAttribute("stroke-width", "1.5");
-            svg.appendChild(outer);
-          }
-
-          console.log(`♛ Queen occupying square [${row}, ${col}] — rendered dots`);
-        }
-        if (piece === 'q') {
-          const positions = side === "white"
-            ? [ { x: 30, y: 8 }, { x: 51, y: 30 }, { x: 30, y: 52 }, { x: 11, y: 30 } ]
-            : [ { x: 8, y: 8 }, { x: 52, y: 8 }, { x: 8, y: 52 }, { x: 52, y: 52 } ];
-
-          for (const pos of positions) {
-            const inner = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-            inner.setAttribute("cx", pos.x);
-            inner.setAttribute("cy", pos.y);
-            inner.setAttribute("r", "3");
-            inner.setAttribute("fill", style.fill);
-            svg.appendChild(inner);
-
-            const outer = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-            outer.setAttribute("cx", pos.x);
-            outer.setAttribute("cy", pos.y);
-            outer.setAttribute("r", "4.5");
-            outer.setAttribute("fill", "none");
-            outer.setAttribute("stroke", style.stroke);
-            outer.setAttribute("stroke-width", "1.5");
-            svg.appendChild(outer);
-          }
-        }
-
-        if (piece.toLowerCase() === 'n') {
-          const positions = side === "white"
-            ? [ { x: 30, y: 8 }, { x: 51, y: 30 }, { x: 30, y: 52 }, { x: 11, y: 30 } ]
-            : [ { x: 8, y: 8 }, { x: 52, y: 8 }, { x: 8, y: 52 }, { x: 52, y: 52 } ];
-
-          const drawCross = (cx, cy, size = 4) => {
-            const h = document.createElementNS("http://www.w3.org/2000/svg", "line");
-            h.setAttribute("x1", cx - size);
-            h.setAttribute("x2", cx + size);
-            h.setAttribute("y1", cy);
-            h.setAttribute("y2", cy);
-            h.setAttribute("stroke", color);
-            h.setAttribute("stroke-width", "1.5");
-            svg.appendChild(h);
-
-            const v = document.createElementNS("http://www.w3.org/2000/svg", "line");
-            v.setAttribute("x1", cx);
-            v.setAttribute("x2", cx);
-            v.setAttribute("y1", cy - size);
-            v.setAttribute("y2", cy + size);
-            v.setAttribute("stroke", color);
-            v.setAttribute("stroke-width", "1.5");
-            svg.appendChild(v);
-          };
-
-          const drawX = (cx, cy, size = 4) => {
-            const d1 = document.createElementNS("http://www.w3.org/2000/svg", "line");
-            d1.setAttribute("x1", cx - size);
-            d1.setAttribute("y1", cy - size);
-            d1.setAttribute("x2", cx + size);
-            d1.setAttribute("y2", cy + size);
-            d1.setAttribute("stroke", color);
-            d1.setAttribute("stroke-width", "1.5");
-            svg.appendChild(d1);
-
-            const d2 = document.createElementNS("http://www.w3.org/2000/svg", "line");
-            d2.setAttribute("x1", cx + size);
-            d2.setAttribute("y1", cy - size);
-            d2.setAttribute("x2", cx - size);
-            d2.setAttribute("y2", cy + size);
-            d2.setAttribute("stroke", color);
-            d2.setAttribute("stroke-width", "1.5");
-            svg.appendChild(d2);
-          };
-
-          for (const pos of positions) {
-            side === "white" ? drawCross(pos.x, pos.y) : drawX(pos.x, pos.y);
-          }
-        }
-        if (boardPiece && boardPiece.toLowerCase() === 'r') {
-          const rookColor = boardPiece === 'R' ? "#00bcd4" : "#8B0000";
-
-          // Horizontal line
-          const hLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
-          hLine.setAttribute("x1", 10);
-          hLine.setAttribute("y1", 30);
-          hLine.setAttribute("x2", 50);
-          hLine.setAttribute("y2", 30);
-          hLine.setAttribute("stroke", rookColor);
-          hLine.setAttribute("stroke-width", "2");
-          hLine.setAttribute("stroke-linecap", "round");
-          svg.appendChild(hLine);
-
-          // Vertical line
-          const vLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
-          vLine.setAttribute("x1", 30);
-          vLine.setAttribute("y1", 10);
-          vLine.setAttribute("x2", 30);
-          vLine.setAttribute("y2", 50);
-          vLine.setAttribute("stroke", rookColor);
-          vLine.setAttribute("stroke-width", "2");
-          vLine.setAttribute("stroke-linecap", "round");
-          svg.appendChild(vLine);
-
-          console.log(`♜ Rook occupying square [${row}, ${col}] — rendered cross`);
-        }
-
-
-        if (piece === 'r') {
-          const from = cell[side].find(inf => inf.piece === 'r' && inf.from)?.from;
-          if (!from) return;
-          const dx = col - from.col;
-          const dy = row - from.row;
-
-          // If it's an influenced square, draw a directional line
-          if (from.row !== row || from.col !== col) {
-            let line = null;
-            if (dx === 0 && dy < 0) line = [30, 60, 30, 45];     // up
-            else if (dx === 0 && dy > 0) line = [30, 0, 30, 15]; // down
-            else if (dy === 0 && dx < 0) line = [60, 30, 45, 30];  // left
-            else if (dy === 0 && dx > 0) line = [0, 30, 15, 30]; // right
-
-            if (line) {
-              const arrow = document.createElementNS("http://www.w3.org/2000/svg", "line");
-              arrow.setAttribute("x1", line[0]);
-              arrow.setAttribute("y1", line[1]);
-              arrow.setAttribute("x2", line[2]);
-              arrow.setAttribute("y2", line[3]);
-              arrow.setAttribute("stroke", color);
-              arrow.setAttribute("stroke-width", "4");
-              arrow.setAttribute("stroke-linecap", "round");
-              svg.appendChild(arrow);
-            }
-          } else {
-            // Rook is occupying this square — draw two horizontal lines
-            const yCoords = [20, 40]; // Vertical positions of the two lines
-
-            for (const y of yCoords) {
-              const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-              line.setAttribute("x1", 10);
-              line.setAttribute("y1", y);
-              line.setAttribute("x2", 50);
-              line.setAttribute("y2", y);
-              line.setAttribute("stroke", color);
-              line.setAttribute("stroke-width", "2");
-              line.setAttribute("stroke-linecap", "round");
-              svg.appendChild(line);
-            }
-
-            console.log(`♜ Rook occupying square [${row}, ${col}] — rendered horizontal lines`);
-          }
-        }
-
-        if (boardPiece && boardPiece.toLowerCase() === 'k') {
-          const kingColor = boardPiece === 'K' ? "#00bcd4" : "#8B0000";
-          const kingOutline = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-          kingOutline.setAttribute("x", 16);
-          kingOutline.setAttribute("y", 16);
-          kingOutline.setAttribute("width", 28);
-          kingOutline.setAttribute("height", 28);
-          kingOutline.setAttribute("fill", "none");
-          kingOutline.setAttribute("stroke", kingColor);
-          kingOutline.setAttribute("stroke-width", "2");
-          kingOutline.setAttribute("stroke-dasharray", "4,2");
-          svg.appendChild(kingOutline);
-        }
-
-        if (piece === 'k') {
-          const kingChar = side === "white" ? 'K' : 'k';
-          const isKingHere = boardPiece === kingChar;
-          const influencesHere = cell[side].some(inf => inf.piece === 'k');
-
-          if (influencesHere && !isKingHere) {
-            const kingColor = side === "white" ? "#00bcd4" : "#8B0000";
-            const kingOutline = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-            kingOutline.setAttribute("x", 6);
-            kingOutline.setAttribute("y", 6);
-            kingOutline.setAttribute("width", 48);
-            kingOutline.setAttribute("height", 48);
-            kingOutline.setAttribute("fill", "none");
-            kingOutline.setAttribute("stroke", kingColor);
-            kingOutline.setAttribute("stroke-width", "1");
-            kingOutline.setAttribute("stroke-dasharray", "4,2");
-            svg.appendChild(kingOutline);
-          }
-        }
-      };
-
-      const orderedPieces = ['p', 'k', 'r', 'q', 'b', 'n'];
-
-      for (const pieceType of orderedPieces) {
-        cell.white
-          .filter(inf => inf.piece === pieceType)
-          .forEach((inf, i) => drawSymbol("white", pieceType, i));
-        cell.black
-          .filter(inf => inf.piece === pieceType)
-          .forEach((inf, i) => drawSymbol("black", pieceType, i));
+      // Render each piece type influence
+      for (const side of ["white", "black"]) {
+        const color = influenceStyles[side].stroke;
+        renderPawnInfluence(svg, cell, row, col, side, color);
+        renderKnightInfluence(svg, cell, row, col, side, color);
+        renderBishopInfluence(svg, cell, row, col, side, color, boardPiece);
+        renderRookInfluence(svg, cell, row, col, side, color, boardPiece);
+        renderQueenInfluence(svg, cell, row, col, side, color, boardPiece);
+        renderKingInfluence(svg, cell, row, col, side, color, boardPiece);
       }
 
       square.appendChild(svg);
     }
   }
 }
+
+
 
 
 function createSvgOverlay(square) {

@@ -1,63 +1,57 @@
-/* Layout & base styles */
+/* Base layout and theme */
 body {
   font-family: sans-serif;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-top: 20px;
+  padding: 20px;
   background-color: #f0f0f0;
+  text-align: center;
 }
 
+/* Board container */
 #board {
   display: grid;
   grid-template-columns: repeat(8, 60px);
   grid-template-rows: repeat(8, 60px);
-  border: 2px solid #333333;
+  border: 2px solid #333;
+  margin: 20px auto;
   user-select: none;
+  width: fit-content;
 }
 
-#turn-indicator {
-  font-size: 20px;
-  margin-bottom: 10px;
-  font-weight: bold;
-  color: #444;
-  text-align: center;
-}
-
-/* Board squares */
+/* Square styling */
 .square {
   width: 60px;
   height: 60px;
+  box-sizing: border-box;
   display: flex;
   justify-content: center;
   align-items: center;
   font-size: 36px;
   cursor: pointer;
+  position: relative;
+  overflow: hidden;
   transition: background-color 0.3s ease;
-  position: relative;   /* Enables absolute-positioned children like SVG */
-  overflow: hidden;     /* Prevent visual spillover */
 }
 
-/* Square colors */
 .light-square {
-  background-color: #f0d9b5;
+  background-color: #f0d9b5; /* classic light square */
 }
+
 .dark-square {
-  background-color: #779556;
+  background-color: #779556; /* classic dark square */
 }
 
 .square:hover {
   filter: brightness(1.15);
 }
 
-/* Piece coloring */
+/* Piece styles */
 .white-piece {
   color: #ffffff !important;
   text-shadow:
     -1px -1px 0 #000,
-    1px -1px 0 #000,
-    -1px 1px 0 #000,
-    1px 1px 0 #000;
+     1px -1px 0 #000,
+    -1px  1px 0 #000,
+     1px  1px 0 #000;
 }
 
 .black-piece {
@@ -69,13 +63,22 @@ body {
      1px  1px 0 #fff;
 }
 
-/* Move highlight */
+/* Game status display */
+#turn-indicator,
+#checkStatus,
+#gameStatus {
+  font-weight: bold;
+  margin: 10px 0;
+  min-height: 1.2em;
+}
+
+/* Highlight legal moves */
 .highlight {
   box-shadow: inset 0 0 10px 4px rgba(255, 215, 0, 0.7);
   border-radius: 8px;
 }
 
-/* Modal (e.g. promotion) */
+/* Modal styling */
 .modal {
   display: none;
   position: fixed;
@@ -112,7 +115,7 @@ body {
   cursor: pointer;
 }
 
-/* SVG overlay for influence */
+/* SVG overlays */
 .influence-svg {
   position: absolute;
   top: 0;
@@ -120,6 +123,7 @@ body {
   pointer-events: none;
   z-index: 1;
 }
+
 .piece-svg {
   position: absolute;
   top: 0;
@@ -130,56 +134,25 @@ body {
   pointer-events: none;
 }
 
-
-/* Influence colors (used by SVG logic) */
-.white-influence {
-  color: #00bcd4;
-}
-.black-influence {
-  color: #c35454;
-}
-
-.influence-white {
-  fill: #8acbdd;
-  stroke: #00bcd4;
-}
-.influence-black {
-  fill: #fad4d4;
-  stroke: #c35454;
+/* Button styling */
+#controls button {
+  margin: 0 5px;
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 4px;
+  border: 1px solid #444;
+  background-color: #eee;
+  transition: background-color 0.3s ease;
 }
 
-.knight-svg-text {
-  stroke: none !important;
-  paint-order: fill !important;
-  fill-opacity: 1 !important;
-  font-weight: bold;
-  font-family: sans-serif;
-  pointer-events: none;
+#controls button:hover,
+#controls button:focus {
+  background-color: #ddd;
+  outline: none;
 }
 
-.piece-symbol {
-  position: relative;
-  z-index: 2;
-  font-size: 52px;
-  pointer-events: none;
+#drawOffer {
+  margin-top: 10px;
+  display: none;
 }
-
-.influence-white {
-  fill: #8acbdd;
-  stroke: #00bcd4;
-}
-.influence-black {
-  fill: #F9D4D4;
-  stroke: #8B0000;
-}
-
-.knight-svg-text {
-  stroke: none !important;
-  paint-order: fill !important;
-  fill-opacity: 1 !important;
-  font-weight: bold;
-  font-family: sans-serif;
-  pointer-events: none;
-}
-
-

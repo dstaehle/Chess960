@@ -44,19 +44,25 @@ function makeMove(from, to, moveMeta = {}) {
   const piece = boardState[from.row][from.col];
   const lowerPiece = piece.toLowerCase();
 
-  // 🏰 Handle castling BEFORE king move (Chess960 logic)
-  if (lowerPiece === 'k' && moveMeta.isCastle && typeof moveMeta.rookCol === 'number') {
-    const direction = moveMeta.rookCol < from.col ? -1 : 1;
+  // Handle castling BEFORE moving king
+  if (lowerPiece === 'k' && moveMeta.isCastle) {
     const rookFromCol = moveMeta.rookCol;
-    const rookToCol = to.col + (direction === -1 ? 1 : -1); // Rook lands on the other side of king
-
     const rook = boardState[from.row][rookFromCol];
-    if (rook && rook.toLowerCase() === 'r') {
-      boardState[from.row][rookFromCol] = null;
-      boardState[from.row][rookToCol] = rook;
-      console.log("✅ Rook moved for castling from", rookFromCol, "to", rookToCol);
+    if (!rook || rook.toLowerCase() !== 'r') {
+      console.warn("⚠️ Castling failed: Rook not found at", rookFromCol);
     } else {
-      console.warn("⚠️ Expected rook not found at column", rookFromCol);
+      // Rook destination depends on final king position
+      const kingFinalCol = to.col;
+      const rookTargetCol = kingFinalCol < rookFromCol ? kingFinalCol + 1 : kingFinalCol - 1;
+
+      // Avoid overwrite
+      if (boardState[from.row][rookTargetCol]) {
+        console.warn("⚠️ Castling blocked: destination square occupied");
+      } else {
+        boardState[from.row][rookFromCol] = null;
+        boardState[from.row][rookTargetCol] = rook;
+        console.log(`🏰 Castling rook from ${rookFromCol} to ${rookTargetCol}`);
+      }
     }
   }
 
