@@ -71,16 +71,21 @@ function createInitialBoard() {
     white: {
       kingStartCol: whiteKingCol,
       rookCols: whiteRookCols,
-      kingSideTarget: 6, // g1
-      queenSideTarget: 2 // c1
+      kingSideTarget: 6,
+      queenSideTarget: 2,
+      kingSideRookTarget: 5,    // rook lands to the left of g1
+      queenSideRookTarget: 3    // rook lands to the right of c1
     },
     black: {
       kingStartCol: blackKingCol,
       rookCols: blackRookCols,
-      kingSideTarget: 6, // g8
-      queenSideTarget: 2 // c8
+      kingSideTarget: 6,
+      queenSideTarget: 2,
+      kingSideRookTarget: 5,
+      queenSideRookTarget: 3
     }
   };
+
 
   return { board, whiteBack, blackBack, castlingInfo };
 }

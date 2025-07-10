@@ -18,7 +18,6 @@ let hasMoved = {
   blackRooks: {}
 };
 
-
 function initializeGame() {
   const init = createInitialBoard();
   boardState = init.board;
@@ -44,29 +43,77 @@ function makeMove(from, to, moveMeta = {}) {
   const piece = boardState[from.row][from.col];
   const lowerPiece = piece.toLowerCase();
 
-  // Handle castling BEFORE moving king
-  if (lowerPiece === 'k' && moveMeta.isCastle) {
-    const rookFromCol = moveMeta.rookCol;
-    const rook = boardState[from.row][rookFromCol];
-    if (!rook || rook.toLowerCase() !== 'r') {
-      console.warn("⚠️ Castling failed: Rook not found at", rookFromCol);
-    } else {
-      // Rook destination depends on final king position
-      const kingFinalCol = to.col;
-      const rookTargetCol = kingFinalCol < rookFromCol ? kingFinalCol + 1 : kingFinalCol - 1;
-
-      // Avoid overwrite
-      if (boardState[from.row][rookTargetCol]) {
-        console.warn("⚠️ Castling blocked: destination square occupied");
-      } else {
-        boardState[from.row][rookFromCol] = null;
-        boardState[from.row][rookTargetCol] = rook;
-        console.log(`🏰 Castling rook from ${rookFromCol} to ${rookTargetCol}`);
-      }
-    }
+  console.log("📥 makeMove called with from:", from, "to:", to, "meta:", moveMeta);
+  console.log("🔍 Checking enPassant status:", moveMeta?.enPassant);
+  if (moveMeta && typeof moveMeta === 'object') {
+    console.log("🧪 moveMeta keys:", Object.keys(moveMeta));
   }
 
-  // 🧩 Pawn promotion logic
+  // 🏰 Handle castling
+  if (lowerPiece === 'k' && moveMeta?.isCastle) {
+    const rookFromCol = moveMeta.rookCol;
+    const rook = boardState[from.row][rookFromCol];
+
+    const kingTargetCol = to.col;
+    const rookTargetCol = kingTargetCol > from.col ? kingTargetCol - 1 : kingTargetCol + 1;
+
+    if (!rook || rook.toLowerCase() !== 'r') {
+      console.warn("⚠️ No rook found at expected position during castling");
+      return;
+    }
+
+    if (rookTargetCol === rookFromCol) {
+      console.warn("⚠️ Invalid castling: rook target is same as origin");
+      return;
+    }
+
+    if (
+      boardState[from.row][rookTargetCol] &&
+      boardState[from.row][rookTargetCol] !== rook
+    ) {
+      console.warn("⚠️ Castling blocked: destination square occupied");
+      return;
+    }
+
+    boardState[to.row][to.col] = piece;
+    boardState[from.row][from.col] = null;
+    boardState[from.row][rookFromCol] = null;
+    boardState[from.row][rookTargetCol] = rook;
+
+    lastMove = { piece, from, to, isCastle: true };
+    selectedSquare = null;
+    legalMoves = [];
+
+    if (isWhitePiece(piece)) hasMoved.whiteKing = true;
+    else hasMoved.blackKing = true;
+
+    currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
+    boardState = boardState.map(row => row.slice());
+    console.log(`🏰 Castled: king to ${to.col}, rook from ${rookFromCol} to ${rookTargetCol}`);
+    return;
+  }
+
+  // ♟️ Handle en passant
+  if (moveMeta?.enPassant) {
+    const dir = isWhitePiece(piece) ? 1 : -1;
+    const capturedRow = to.row + dir;
+
+    console.log("🟦 En passant capture occurred");
+    console.log("  ↪️ Capturing pawn at:", { row: capturedRow, col: to.col });
+
+    boardState[to.row][to.col] = piece;
+    boardState[from.row][from.col] = null;
+    boardState[capturedRow][to.col] = null;
+
+    lastMove = { piece, from, to, enPassant: true };
+    selectedSquare = null;
+    legalMoves = [];
+    currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
+    boardState = boardState.map(row => row.slice());
+    return;
+  }
+
+  // 🧩 Handle promotion
   if (
     lowerPiece === 'p' &&
     ((isWhitePiece(piece) && to.row === 0) || (isBlackPiece(piece) && to.row === 7))
@@ -75,14 +122,13 @@ function makeMove(from, to, moveMeta = {}) {
     return { requiresPromotion: true };
   }
 
-  // 👑 Move the king or other piece
+  // ✅ Regular move
   boardState[to.row][to.col] = piece;
   boardState[from.row][from.col] = null;
   lastMove = { piece, from, to };
   selectedSquare = null;
   legalMoves = [];
 
-  // 📌 Mark moved king or rook
   if (lowerPiece === 'k') {
     isWhitePiece(piece) ? hasMoved.whiteKing = true : hasMoved.blackKing = true;
   }
@@ -112,7 +158,6 @@ function makeMove(from, to, moveMeta = {}) {
 
   currentPlayer = opponent;
   boardState = boardState.map(row => row.slice());
-  console.log("✅ Move made:", from, "to", to, "by", currentPlayer);
   return result;
 }
 
@@ -135,7 +180,6 @@ export function getCastlingStatus() {
 
   return `Castling rights - White: ${white.join(', ') || 'None'}, Black: ${black.join(', ') || 'None'}`;
 }
-
 
 function promotePawn(newPieceChar) {
   if (!pendingPromotion) return;
@@ -160,78 +204,92 @@ function promotePawn(newPieceChar) {
   currentPlayer = opponent;
 }
 
-
-function getLegalMovesForPiece(piece, from, board, lastMove) {
-  const moves = [];
-
-  if (!piece || !from || typeof from.row !== 'number' || typeof from.col !== 'number') return moves;
+function getLegalMovesForPiece(row, col, board, currentPlayer, lastMove, castlingInfo) {
+  const piece = board[row][col];
+  if (!piece) return [];
 
   const isWhite = isWhitePiece(piece);
-  const side = isWhite ? 'white' : 'black';
+  if ((currentPlayer === 'white' && !isWhite) || (currentPlayer === 'black' && isWhite)) {
+    return [];
+  }
+
+  const moves = [];
+  const lower = piece.toLowerCase();
 
   for (let r = 0; r < 8; r++) {
     for (let c = 0; c < 8; c++) {
-      if (isLegalMove(piece, from, { row: r, col: c }, board, false, lastMove)) {
-        moves.push({ row: r, col: c });
+      const from = { row, col };
+      const to = { row: r, col: c };
+      if (isLegalMove(piece, from, to, board, false, lastMove)) {
+        moves.push(to);
       }
     }
   }
 
-  // ♟ En Passant
-  if (piece.toLowerCase() === 'p' && lastMove?.piece?.toLowerCase() === 'p') {
-    const dir = isWhite ? -1 : 1;
-    const startRow = isWhite ? 3 : 4;
+  // ♟️ En Passant logic (fixed to use lastMove.piece directly)
+  if (lower === 'p' && lastMove?.piece?.toLowerCase() === 'p') {
+    const isWhitePawn = isWhitePiece(piece);
+    const dir = isWhitePawn ? -1 : 1;
 
-    if (from.row === startRow && Math.abs(lastMove.to.row - lastMove.from.row) === 2) {
-      const oppCol = lastMove.to.col;
-      if (Math.abs(oppCol - from.col) === 1 && lastMove.to.row === from.row) {
-        moves.push({ row: from.row + dir, col: oppCol });
-      }
+    // Check if last move was a 2-square pawn advance adjacent to this one
+    if (
+      Math.abs(lastMove.to.row - lastMove.from.row) === 2 &&
+      lastMove.to.row === row &&
+      Math.abs(lastMove.to.col - col) === 1
+    ) {
+      moves.push({
+        row: row + dir,
+        col: lastMove.to.col,
+        enPassant: true
+      });
     }
   }
 
-  // 🏰 Castling (Chess960-style)
-  if (piece.toLowerCase() === 'k') {
-    const row = from.row;
-    const kingMoved = isWhite ? hasMoved.whiteKing : hasMoved.blackKing;
-    const rookFlags = isWhite ? hasMoved.whiteRooks : hasMoved.blackRooks;
+  // ♚ Chess960 Castling logic
+  if (lower === 'k') {
+    const side = isWhite ? 'white' : 'black';
     const info = castlingInfo[side];
+    const kingStartCol = info.kingStartCol;
+    const rookCols = info.rookCols;
+    const castlingRow = isWhite ? 7 : 0;
 
-    if (!kingMoved) {
-      for (const rookCol of info.rookCols) {
-        if (rookFlags[rookCol]) continue;
-
-        const rook = board[row][rookCol];
+    if (col === kingStartCol && row === castlingRow) {
+      for (const rookCol of rookCols) {
+        const rook = board[castlingRow][rookCol];
         if (!rook || rook.toLowerCase() !== 'r') continue;
 
-        const isKingside = rookCol > from.col;
-        const targetCol = isKingside ? info.kingSideTarget : info.queenSideTarget;
-        const direction = Math.sign(targetCol - from.col);
-        const pathCols = [];
+        const direction = rookCol > kingStartCol ? 1 : -1;
+        const targetCol = rookCol > kingStartCol ? info.kingSideTarget : info.queenSideTarget;
 
-        for (let c = from.col + direction; c !== rookCol; c += direction) {
-          pathCols.push(c);
+        if (targetCol === rookCol) continue;
+
+        let clear = true;
+        for (let c = kingStartCol + direction; c !== rookCol; c += direction) {
+          if (board[castlingRow][c]) {
+            clear = false;
+            break;
+          }
         }
 
-        const pathClear = pathCols.every(c => !board[row][c]);
+        const intermediateCols = [kingStartCol + direction, targetCol];
+        let safe = clear;
+        for (const c of intermediateCols) {
+          const tempBoard = board.map(r => r.slice());
+          tempBoard[castlingRow][kingStartCol] = null;
+          tempBoard[castlingRow][c] = piece;
+          if (isInCheck(tempBoard, side)) {
+            safe = false;
+            break;
+          }
+        }
 
-        const checkCols = [from.col, from.col + direction, targetCol];
-        const notInCheck = checkCols.every(c => {
-          const tempBoard = copyBoard(board);
-          tempBoard[row][from.col] = null;
-          tempBoard[row][c] = piece;
-          return !isInCheck(tempBoard, side, lastMove);
-        });
-
-        if (pathClear && notInCheck) {
-          const castleMove = {
-            row,
+        if (safe) {
+          moves.push({
+            row: castlingRow,
             col: targetCol,
             isCastle: true,
             rookCol
-          };
-          console.log("🏰 Castling move added:", castleMove);
-          moves.push(castleMove);
+          });
         }
       }
     }
@@ -243,47 +301,48 @@ function getLegalMovesForPiece(piece, from, board, lastMove) {
 
 
 
+function getLegalMoves() {
+  if (selectedSquare === null) return [];
 
+  const { row, col } = selectedSquare;
+  const piece = boardState[row][col];
+  if (!piece) return [];
 
-function copyBoard(board) {
-  return board.map(row => row.slice());
+  const moves = getLegalMovesForPiece(
+    row,
+    col,
+    boardState,
+    currentPlayer,
+    lastMove,
+    castlingInfo
+  );
+
+  return moves.map(to => ({ from: selectedSquare, to }));
 }
+
 function getBoardState() {
   return boardState;
 }
-
 function getCurrentPlayer() {
-return currentPlayer;
+  return currentPlayer;
 }
-
 function getGameStatus() {
   if (gameOver) {
     return `Game over. ${currentPlayer === 'white' ? 'Black' : 'White'} wins!`;
   }
   return null;
 }
-function getLegalMoves() {
-  if (selectedSquare === null) return [];
-
-  const piece = boardState[selectedSquare.row][selectedSquare.col];
-  if (!piece) return [];
-
-  return getLegalMovesForPiece(piece, selectedSquare, boardState).map(to => ({
-    from: selectedSquare,
-    to
-  }));
-}
-
 function getLastMove() {
   return lastMove;
 }
-
 function resetGame() {
   initializeGame();
 }
 
+function getCastlingInfo() {
+  return castlingInfo;
+}
 
-// Public API
 export {
   initializeGame,
   makeMove,
@@ -295,5 +354,6 @@ export {
   getLegalMoves,
   resetGame,
   getLastMove,
-  hasMoved
+  hasMoved,
+  getCastlingInfo
 };

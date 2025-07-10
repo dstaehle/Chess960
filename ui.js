@@ -10,7 +10,8 @@ import {
   makeMove,
   promotePawn,
   getLastMove,
-  getCastlingStatus
+  getCastlingStatus,
+  getCastlingInfo
 } from './game.js';
 
 import { buildInfluenceMap, getAllKnightInfluence, isWhitePiece } from './engine.js';
@@ -33,8 +34,8 @@ const promotionButtons = promotionModal.querySelectorAll("button");
 const lastMove = getLastMove();
 const influenceStyles = {
   white: {
-    stroke: "#00bcd4",  // Outer ring color
-    fill: "#ccf2f9"     // Inner fill color
+    stroke: "#00bcd4",
+    fill: "#ccf2f9"
   },
   black: {
     stroke: "#8B0000",
@@ -42,11 +43,7 @@ const influenceStyles = {
   }
 };
 
-
-
-
 let selectedSquare = null;
-
 
 export function createBoard() {
   boardEl.innerHTML = "";
@@ -86,43 +83,88 @@ function handleClick(row, col) {
 
   console.log("Piece clicked:", clickedPiece, "Current Player:", player);
 
-
-  if (selectedSquare === null) {
-    if (!clickedPiece) return;
-
-    const isWhite = clickedPiece === clickedPiece.toUpperCase();
-    if ((player === "white" && !isWhite) || (player === "black" && isWhite)) return;
-
-    selectedSquare = { row, col };
-    const legalMoves = getLegalMovesForPiece(clickedPiece, selectedSquare, board, getLastMove());
-
-    highlightMoves(legalMoves);
-    console.log("✅ Selected square:", selectedSquare, "Legal moves:", legalMoves);
+  if (!selectedSquare) {
+    handleFirstClick(row, col, clickedPiece, board, player);
   } else {
-    const piece = board[selectedSquare.row][selectedSquare.col];
-    const legalMoves = getLegalMovesForPiece(piece, selectedSquare, board, getLastMove());
-
-    const move = legalMoves.find(m => m.row === row && m.col === col);
-
-    if (move) {
-      // 🆕 Pass full move metadata for things like castling
-      const result = makeMove(selectedSquare, { row, col }, move);
-
-      if (result?.requiresPromotion) {
-        console.log("🛑 Promotion required");
-        showPromotionModal(player === "white");
-        return;
-      }
-
-      updateBoard();
-    } else {
-      console.log("⛔ Invalid move attempt or move not found in legal moves");
-    }
-
-    selectedSquare = null;
-    clearHighlights();
+    handleSecondClick(row, col, board, player);
   }
 }
+
+function handleFirstClick(row, col, piece, board, player) {
+  if (!piece) {
+    console.log("⬜️ Clicked empty square with no piece selected");
+    return;
+  }
+
+  const isWhite = piece === piece.toUpperCase();
+  const isPlayersPiece = (player === "white" && isWhite) || (player === "black" && !isWhite);
+
+  if (!isPlayersPiece) {
+    console.log("🚫 Clicked opponent's piece");
+    return;
+  }
+
+  selectedSquare = { row, col };
+  const legalMoves = getLegalMovesForPiece(
+    row,
+    col,
+    board,
+    player,
+    getLastMove(),
+    getCastlingInfo()
+  );
+
+  highlightMoves(legalMoves);
+  console.log("✅ Selected square:", selectedSquare, "Legal moves:", legalMoves);
+}
+
+function handleSecondClick(row, col, board, player) {
+  const from = selectedSquare;
+  const legalMoves = getLegalMovesForPiece(
+    from.row,
+    from.col,
+    board,
+    getCurrentPlayer(),
+    getLastMove(),
+    getCastlingInfo()
+  );
+
+  // Prefer enPassant moves if any target the same destination
+  const matchingMoves = legalMoves.filter(m => m.row === row && m.col === col);
+  const move = matchingMoves.sort((a, b) => (b.enPassant === true) - (a.enPassant === true))[0];
+
+  if (!move) {
+    console.log("⛔ Invalid move attempt or move not found in legal moves");
+    resetSelection();
+    return;
+  }
+
+  const to = { row, col };
+  console.log("📦 Making move with metadata:", move);
+  console.log("↪️ From:", from, "To:", to);
+
+  const result = makeMove(from, to, move);
+
+  if (result?.requiresPromotion) {
+    console.log("🛑 Promotion required");
+    showPromotionModal(player === "white");
+    return;
+  }
+
+  updateBoard();
+  resetSelection();
+}
+
+function resetSelection() {
+  selectedSquare = null;
+  clearHighlights();
+}
+
+
+
+
+
+
 
 
 
@@ -219,7 +261,14 @@ function maybeMakeBotMove() {
         const from = { row: fromRow, col: fromCol };
         let moves = [];
         try {
-          moves = getLegalMovesForPiece(piece, from, board, getLastMove()) || [];
+          moves = getLegalMovesForPiece(
+            fromRow,
+            fromCol,
+            board,
+            currentPlayer,
+            getLastMove(),
+            getCastlingInfo()
+          ) || [];
         } catch (err) {
           console.warn("Bot move skipped due to error:", err);
           moves = [];
