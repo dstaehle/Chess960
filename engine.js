@@ -8,44 +8,63 @@ function getPieceSVG(piece) {
 }
 
 function isWhitePiece(p) {
-  return p && p === p.toUpperCase();
+  if (typeof p !== 'string' || p.length !== 1) return false;
+  return p === p.toUpperCase();
 }
 
+
 function isBlackPiece(p) {
-  return p && p === p.toLowerCase();
+  if (typeof p !== 'string' || p.length !== 1) return false;
+  return p === p.toLowerCase();
 }
 
 function generateChess960BackRank() {
   const pieces = Array(8).fill(null);
-  const dark = [0, 2, 4, 6], light = [1, 3, 5, 7];
-  
-  pieces[dark[Math.floor(Math.random() * dark.length)]] = 'b';
-  pieces[light[Math.floor(Math.random() * light.length)]] = 'b';
+  placeTwoBishops(pieces);
+  placeQueen(pieces);
+  placeKnights(pieces);
+  placeKingAndRooks(pieces);
+  return pieces;
+}
 
-  while (true) {
-    const i = Math.floor(Math.random() * 8);
-    if (!pieces[i]) {
-      pieces[i] = 'q';
-      break;
-    }
+function getEmptyIndices(pieces) {
+  return pieces
+    .map((p, i) => (p === null ? i : -1))
+    .filter(i => i !== -1);
+}
+
+function placeTwoBishops(pieces) {
+  const darkSquares = [0, 2, 4, 6];
+  const lightSquares = [1, 3, 5, 7];
+  pieces[randomChoice(darkSquares)] = 'b';
+  pieces[randomChoice(lightSquares)] = 'b';
+}
+
+function placeQueen(pieces) {
+  const empty = getEmptyIndices(pieces);
+  pieces[randomChoice(empty)] = 'q';
+}
+
+function placeKnights(pieces) {
+  let placed = 0;
+  while (placed < 2) {
+    const empty = getEmptyIndices(pieces);
+    const i = randomChoice(empty);
+    pieces[i] = 'n';
+    placed++;
   }
+}
 
-  let knightsPlaced = 0;
-  while (knightsPlaced < 2) {
-    const i = Math.floor(Math.random() * 8);
-    if (!pieces[i]) {
-      pieces[i] = 'n';
-      knightsPlaced++;
-    }
-  }
-
-  const empty = pieces.map((p, i) => p === null ? i : -1).filter(i => i !== -1).sort();
-  const [r1, k, r2] = [empty[0], empty[1], empty[2]];
+function placeKingAndRooks(pieces) {
+  const empty = getEmptyIndices(pieces).sort();
+  const [r1, k, r2] = empty;
   pieces[r1] = 'r';
   pieces[k] = 'k';
   pieces[r2] = 'r';
+}
 
-  return pieces;
+function randomChoice(array) {
+  return array[Math.floor(Math.random() * array.length)];
 }
 
 function createInitialBoard() {
@@ -89,6 +108,8 @@ function createInitialBoard() {
 
   return { board, whiteBack, blackBack, castlingInfo };
 }
+
+
 
 
 function isPathClear(from, to, board) {

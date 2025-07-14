@@ -1,0 +1,18 @@
+{
+  "name": "chess960",
+  "version": "1.0.0",
+  "description": "Concept Chess application (Prototype Application for Context)",
+  "main": "engine.js",
+  "type": "module",
+  "scripts": {
+    "test": "jest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/preset-env": "^7.28.0",
+    "babel-jest": "^30.0.4",
+    "jest": "^30.0.4"
+  }
+}
