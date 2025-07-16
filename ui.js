@@ -18,7 +18,8 @@ import { buildInfluenceMap, getAllKnightInfluence, isWhitePiece } from './engine
 
 import {
   createBoard,
-  handleClick
+  handleClick,
+  restartGame
 } from './uiHandlers.js';
 
 
@@ -320,3 +321,12 @@ document.addEventListener("DOMContentLoaded", () => {
   updateBoard();
 });
  
+document.addEventListener("DOMContentLoaded", () => {
+	initializeGame();
+	createBoard();
+	updateBoard(); // don't forget this if your board doesn't render on load
+
+	document.getElementById("restartBtn").addEventListener("click", () => {
+		restartGame();
+	});
+});

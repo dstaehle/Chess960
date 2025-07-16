@@ -9,7 +9,8 @@ import {
 	getLegalMovesForPiece,
 	getBoardState,
 	getLastMove,
-	getCastlingInfo
+	getCastlingInfo,
+    resetGame
 } from './game.js';
 import { maybeMakeBotMove } from './botLogic.js';
 
@@ -17,6 +18,10 @@ let selectedSquare = null;
 let cachedLegalMoves = [];
 let clickCooldown = false;
 
+export function restartGame() {
+	resetGame();
+	updateBoard();
+}
 export function handleClick(row, col) {
 	// Prevent accidental double execution
 	if (clickCooldown) return;
