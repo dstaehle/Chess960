@@ -32,11 +32,11 @@ body {
   transition: background-color 0.3s ease;
 }
 
-.light-square {
+.square.light {
   background-color: #f0d9b5; /* classic light square */
 }
 
-.dark-square {
+.square.dark {
   background-color: #779556; /* classic dark square */
 }
 
@@ -155,4 +155,12 @@ body {
 #drawOffer {
   margin-top: 10px;
   display: none;
+}
+
+.last-move-from {
+  background-color: #fff59d !important; /* light yellow */
+}
+
+.last-move-to {
+  background-color: #fdd835 !important; /* darker yellow */
 }

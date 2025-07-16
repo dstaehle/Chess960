@@ -41,6 +41,7 @@ function initializeGame() {
 }
 
 function makeMove(from, to, moveMeta = {}) {
+  console.log("moveMeta received in makeMove():", moveMeta);
   const state = {
     boardState,
     currentPlayer,
@@ -63,15 +64,18 @@ function makeMove(from, to, moveMeta = {}) {
   selectedSquare = null;
   legalMoves = [];
   gameOver = result.gameOver || false;
+  if (moveMeta?.enPassant) {
+	console.log("Performing en passant!");
+  }
 
-  return {
-    move: lastMove,
-    isCheck: result.isCheck,
-    isCheckmate: result.isCheckmate,
-    currentPlayer,
-    gameOver
-  };
-}
+    return {
+      move: lastMove,
+      isCheck: result.isCheck,
+      isCheckmate: result.isCheckmate,
+      currentPlayer,
+      gameOver
+    };
+  }
 
 export function getCastlingStatus() {
   const white = [];
@@ -103,6 +107,10 @@ function promotePawn(newPieceChar) {
 }
 
 function getLegalMovesForPiece(row, col, board, currentPlayer, lastMove, castlingInfo) {
+  if (!board || !board[row] || !board[row][col]) {
+    console.warn("Invalid board access:", row, col, board);
+    return []; // or null or some safe fallback
+  }
   const piece = board[row][col];
   if (!piece) return [];
 
@@ -119,28 +127,33 @@ function getLegalMovesForPiece(row, col, board, currentPlayer, lastMove, castlin
       const from = { row, col };
       const to = { row: r, col: c };
       if (isLegalMove(piece, from, to, board, false, lastMove)) {
-        moves.push(to);
+        moves.push({ row: to.row, col: to.col }); // ensures consistent shape
       }
     }
   }
 
-  // ♟️ En Passant logic
+  // ♟️ En Passant
   if (lower === 'p' && lastMove?.piece?.toLowerCase() === 'p') {
-    const isWhitePawn = isWhitePiece(piece);
-    const dir = isWhitePawn ? -1 : 1;
+    const dir = isWhite ? -1 : 1;
 
+    // Enemy moved 2 rows with pawn and is now adjacent
     if (
       Math.abs(lastMove.to.row - lastMove.from.row) === 2 &&
-      lastMove.to.row === row &&
-      Math.abs(lastMove.to.col - col) === 1
+      lastMove.to.row === row && // landed on our rank
+      Math.abs(lastMove.to.col - col) === 1 // and is in adjacent file
     ) {
+      const targetRow = row + dir;
+      const targetCol = lastMove.to.col;
+
       moves.push({
-        row: row + dir,
-        col: lastMove.to.col,
+        row: targetRow,
+        col: targetCol,
         enPassant: true
       });
     }
   }
+
+
 
   // Castling
   if (lower === 'k') {

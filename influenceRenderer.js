@@ -257,3 +257,36 @@ export function renderKingInfluence(svg, cell, row, col, side, color, boardPiece
     svg.appendChild(kingOutline);
   }
 }
+
+export function renderInfluenceMap(influenceMap, board, lastMove) {
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      const square = document.querySelector(`.square[data-row="${row}"][data-col="${col}"]`);
+      if (!square) continue;
+
+      const svg = square.querySelector("svg");
+      if (!svg) continue;
+
+      const cell = influenceMap[row][col];
+      const boardPiece = board[row][col];
+
+      renderPawnInfluence(svg, cell, row, col, "white", "#00bcd4");
+      renderPawnInfluence(svg, cell, row, col, "black", "#dc143c");
+
+      renderKnightInfluence(svg, cell, row, col, "white", "#00bcd4");
+      renderKnightInfluence(svg, cell, row, col, "black", "#dc143c");
+
+      renderBishopInfluence(svg, cell, row, col, "white", "#00bcd4", boardPiece);
+      renderBishopInfluence(svg, cell, row, col, "black", "#dc143c", boardPiece);
+
+      renderRookInfluence(svg, cell, row, col, "white", "#00bcd4", boardPiece);
+      renderRookInfluence(svg, cell, row, col, "black", "#dc143c", boardPiece);
+
+      renderQueenInfluence(svg, cell, row, col, "white", "#00bcd4", boardPiece);
+      renderQueenInfluence(svg, cell, row, col, "black", "#dc143c", boardPiece);
+
+      renderKingInfluence(svg, cell, row, col, "white", "#00bcd4", boardPiece);
+      renderKingInfluence(svg, cell, row, col, "black", "#dc143c", boardPiece);
+    }
+  }
+}
