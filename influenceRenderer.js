@@ -63,7 +63,7 @@ export function renderKnightInfluence(svg, cell, row, col, side, color) {
     : [ { x: 8, y: 8 }, { x: 52, y: 8 }, { x: 8, y: 52 }, { x: 52, y: 52 } ];
 
   const draw = (cx, cy, type = side === "white" ? "+" : "x") => {
-    const size = 4;
+    const size = 3;
     if (type === "+") {
       const h = document.createElementNS("http://www.w3.org/2000/svg", "line");
       h.setAttribute("x1", cx - size);
@@ -270,6 +270,9 @@ export function renderInfluenceMap(influenceMap, board, lastMove) {
       const cell = influenceMap[row][col];
       const boardPiece = board[row][col];
 
+      renderQueenInfluence(svg, cell, row, col, "white", "#adc6c9", boardPiece);
+      renderQueenInfluence(svg, cell, row, col, "black", "#c75b71", boardPiece);
+
       renderPawnInfluence(svg, cell, row, col, "white", "#00bcd4");
       renderPawnInfluence(svg, cell, row, col, "black", "#dc143c");
 
@@ -281,9 +284,6 @@ export function renderInfluenceMap(influenceMap, board, lastMove) {
 
       renderRookInfluence(svg, cell, row, col, "white", "#00bcd4", boardPiece);
       renderRookInfluence(svg, cell, row, col, "black", "#dc143c", boardPiece);
-
-      renderQueenInfluence(svg, cell, row, col, "white", "#00bcd4", boardPiece);
-      renderQueenInfluence(svg, cell, row, col, "black", "#dc143c", boardPiece);
 
       renderKingInfluence(svg, cell, row, col, "white", "#00bcd4", boardPiece);
       renderKingInfluence(svg, cell, row, col, "black", "#dc143c", boardPiece);
