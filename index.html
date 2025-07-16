@@ -8,19 +8,19 @@
 </head>
 <body>
   <h1>Influence Chess 960</h1>
-
   <div id="turn-indicator" aria-live="polite">White's turn</div>
   <div id="gameStatus" aria-live="polite"></div>
   <div id="checkStatus" aria-live="polite"></div>
-  <div id="board"></div>
   <div id="controls" role="region" aria-label="Game controls">
     <button id="resignBtn" type="button">Resign</button>
+    <button id="restartBtn" type="button">Restart Game</button>
     <button id="offerDrawBtn" type="button">Offer Draw</button>
     <div id="drawOffer" role="dialog" aria-modal="true" aria-hidden="true">
       <p>Accept draw?</p>
       <button id="acceptDrawBtn" type="button">Yes</button>
       <button id="declineDrawBtn" type="button">No</button>
     </div>
+  <div id="board"></div>
   </div>
 
   <div id="promotionModal" class="modal" aria-hidden="true">
