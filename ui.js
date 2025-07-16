@@ -1,4 +1,4 @@
-console.log("✅ ui.js is loading...");
+console.log("ui.js is loading...");
 
 import {
   initializeGame,
@@ -15,6 +15,14 @@ import {
 } from './game.js';
 
 import { buildInfluenceMap, getAllKnightInfluence, isWhitePiece } from './engine.js';
+
+import {
+  createBoard,
+  handleClick
+} from './uiHandlers.js';
+
+
+import { updateBoard } from './uiBoard.js';
 
 import {
   renderPawnInfluence,
@@ -45,20 +53,6 @@ const influenceStyles = {
 
 let selectedSquare = null;
 
-export function createBoard() {
-  boardEl.innerHTML = "";
-
-  for (let row = 0; row < 8; row++) {
-    for (let col = 0; col < 8; col++) {
-      const square = document.createElement("div");
-      square.className = `square ${(row + col) % 2 === 0 ? "light-square" : "dark-square"}`;
-      square.dataset.row = row;
-      square.dataset.col = col;
-      square.addEventListener("click", () => handleClick(row, col));
-      boardEl.appendChild(square);
-    }
-  }
-}
 
 function clearHighlights() {
   document.querySelectorAll('.square').forEach(sq => {
@@ -75,20 +69,6 @@ function highlightMoves(moves) {
   }
 }
 
-function handleClick(row, col) {
-  console.log("🟨 handleClick fired for square:", row, col);
-  const board = getBoardState();
-  const clickedPiece = board[row][col];
-  const player = getCurrentPlayer();
-
-  console.log("Piece clicked:", clickedPiece, "Current Player:", player);
-
-  if (!selectedSquare) {
-    handleFirstClick(row, col, clickedPiece, board, player);
-  } else {
-    handleSecondClick(row, col, board, player);
-  }
-}
 
 function handleFirstClick(row, col, piece, board, player) {
   if (!piece) {
@@ -182,67 +162,6 @@ function showPromotionModal(isWhite) {
     };
   });
 }
-
-
-
-
-
-export function updateBoard() {
-  const board = getBoardState();
-  const influenceMap = buildInfluenceMap(board);
-
-  // Step 1: Render influence SVGs FIRST
-  renderInfluenceMap(influenceMap,board);
-
-  // Step 2: Then apply piece symbols and handlers
-  for (let row = 0; row < 8; row++) {
-    for (let col = 0; col < 8; col++) {
-      const selector = `.square[data-row="${row}"][data-col="${col}"]`;
-      const square = boardEl.querySelector(selector);
-      if (!square) continue;
-
-      // Remove non-SVG children only
-      [...square.childNodes].forEach(child => {
-        if (!(child instanceof SVGElement)) child.remove();
-      });
-
-      square.classList.remove(
-        "white-piece", "black-piece", "highlight",
-        "knight-influence", "influence-tl", "influence-tr",
-        "influence-bl", "influence-br"
-      );
-
-      const newSquare = square.cloneNode(true);
-      newSquare.addEventListener("click", () => handleClick(row, col));
-      square.replaceWith(newSquare);
-
-      const pieceChar = board[row][col];
-      if (pieceChar) {
-        const isWhite = pieceChar === pieceChar.toUpperCase();
-        newSquare.classList.add(isWhite ? "white-piece" : "black-piece");
-
-        const pieceImg = document.createElement("img");
-        pieceImg.className = "piece-svg";
-        const pieceCode = (isWhite ? 'w' : 'b') + pieceChar.toUpperCase();
-        pieceImg.src = `pieces/alpha/${pieceCode}.svg`;
-        pieceImg.alt = pieceChar;
-        newSquare.appendChild(pieceImg);
-      }
-    }
-  }
-
-
-  maybeMakeBotMove();
-  turnIndicator.textContent = `${getCurrentPlayer()}'s Turn`;
-  gameStatusDiv.textContent = getGameStatus() || "";
-
-  const lastMove = getLastMove();
-  console.log("📌 Last move:", lastMove);
-  renderInfluenceMap(influenceMap, board, lastMove);
-}
-
-
-
 
 function maybeMakeBotMove() {
   const currentPlayer = getCurrentPlayer();
@@ -400,6 +319,4 @@ document.addEventListener("DOMContentLoaded", () => {
   initializeGame();
   updateBoard();
 });
-
-document.getElementById("castlingStatus").textContent = getCastlingStatus();
  
