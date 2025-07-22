@@ -1,7 +1,5 @@
 // influenceRenderer.js
 
-
-
 export function renderPawnInfluence(svg, cell, row, col, side, color) {
   const sources = cell[side].filter(inf => inf.piece === 'p' && inf.from);
 
@@ -20,8 +18,6 @@ export function renderPawnInfluence(svg, cell, row, col, side, color) {
     drawPawnInfluenceBand(svg, side, isRight, color);
   }
 }
-
-
 
 function drawPawnInfluenceBand(svg, side, isRight, color) {
   const spacing = 15;
@@ -54,7 +50,6 @@ function drawPawnInfluenceBand(svg, side, isRight, color) {
     svg.appendChild(line);
   }
 }
-
 
 export function renderKnightInfluence(svg, cell, row, col, side, color) {
   if (!cell[side].some(inf => inf.piece === 'n')) return;

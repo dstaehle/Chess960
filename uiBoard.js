@@ -1,4 +1,10 @@
-import { getBoardState, getCurrentPlayer, getGameStatus, getLastMove } from './game.js';
+import { 
+  getBoardState, 
+  getCurrentPlayer, 
+  getGameStatus, 
+  getLastMove 
+} from './game.js';
+
 import { buildInfluenceMap } from './engine.js';
 import { renderInfluenceMap } from './influenceRenderer.js';
 import { handleClick } from './uiHandlers.js';
@@ -22,7 +28,7 @@ export function updateBoard(legalMoves = []) {
 			const square = boardEl.querySelector(selector);
 			if (!square) continue;
 
-			// 🔄 Clear content and reset state
+			// Clear content and reset state
 			square.innerHTML = '';
 			square.classList.remove(
 				"white-piece", "black-piece", "highlight",
@@ -31,15 +37,15 @@ export function updateBoard(legalMoves = []) {
 				"influence-bl", "influence-br"
 			);
 
-			// 🔁 Assign click handler
+			// Assign click handler
 			square.onclick = () => handleClick(row, col);
 
-			// 🟨 Highlight legal moves
+			// Highlight legal moves
 			if (legalMoves.some(m => m.row === row && m.col === col)) {
 				square.classList.add("highlight");
 			}
 
-			// 🟡 Highlight last move
+			// Highlight last move
 			if (lastMove) {
 				if (lastMove.from.row === row && lastMove.from.col === col) {
 					square.classList.add("last-move-from");
@@ -49,7 +55,7 @@ export function updateBoard(legalMoves = []) {
 				}
 			}
 
-			// ➕ Add influence SVG layer
+			// Add influence SVG layer
 			const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
 			svg.setAttribute("width", "60");
 			svg.setAttribute("height", "60");
@@ -58,10 +64,10 @@ export function updateBoard(legalMoves = []) {
 		}
 	}
 
-	// 🎯 Render influence after SVGs exist
+	// Render influence after SVGs exist
 	renderInfluenceMap(influenceMap, board, lastMove);
 
-	// ♟️ Draw pieces
+	// Draw pieces
 	for (let row = 0; row < 8; row++) {
 		for (let col = 0; col < 8; col++) {
 			const pieceChar = board[row][col];

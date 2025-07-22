@@ -3,11 +3,13 @@ import {
   createInitialBoard,
   isLegalMove,
   isInCheck,
-  isCheckmate,
   isWhitePiece,
-  isBlackPiece,
 } from './engine.js';
-import { makeMove as executeMove, promotePawn as executePromotion } from './moveExecutor.js';
+
+import { 
+  makeMove as executeMove, 
+  promotePawn as executePromotion 
+} from './moveExecutor.js';
 
 let boardState, currentPlayer, selectedSquare, legalMoves, gameOver, castlingInfo;
 let pendingPromotion = null;
@@ -19,7 +21,7 @@ let hasMoved = {
   blackRooks: {}
 };
 
-function initializeGame() {
+export function initializeGame() {
   const init = createInitialBoard();
   boardState = init.board;
   castlingInfo = init.castlingInfo;
@@ -40,7 +42,7 @@ function initializeGame() {
   for (const col of castlingInfo.black.rookCols) hasMoved.blackRooks[col] = false;
 }
 
-function makeMove(from, to, moveMeta = {}) {
+export function makeMove(from, to, moveMeta = {}) {
   console.log("moveMeta received in makeMove():", moveMeta);
   const state = {
     boardState,
@@ -94,7 +96,7 @@ export function getCastlingStatus() {
   return `Castling rights - White: ${white.join(', ') || 'None'}, Black: ${black.join(', ') || 'None'}`;
 }
 
-function promotePawn(newPieceChar) {
+export function promotePawn(newPieceChar) {
   const result = executePromotion(newPieceChar, pendingPromotion, boardState, currentPlayer);
   boardState = result.boardState;
   currentPlayer = result.currentPlayer;
@@ -106,10 +108,12 @@ function promotePawn(newPieceChar) {
   legalMoves = [];
 }
 
-function getLegalMovesForPiece(row, col, board, currentPlayer, lastMove, castlingInfo) {
+export function getLegalMovesForPiece(row, col, board, currentPlayer, lastMove, castlingInfo) {
   if (!board || !board[row] || !board[row][col]) {
     console.warn("Invalid board access:", row, col, board);
-    return []; // or null or some safe fallback
+    
+    // or null or some safe fallback
+    return [];
   }
   const piece = board[row][col];
   if (!piece) return [];
@@ -127,20 +131,20 @@ function getLegalMovesForPiece(row, col, board, currentPlayer, lastMove, castlin
       const from = { row, col };
       const to = { row: r, col: c };
       if (isLegalMove(piece, from, to, board, false, lastMove)) {
-        moves.push({ row: to.row, col: to.col }); // ensures consistent shape
+        moves.push({ row: to.row, col: to.col });
       }
     }
   }
 
-  // ♟️ En Passant
+  // En Passant
   if (lower === 'p' && lastMove?.piece?.toLowerCase() === 'p') {
     const dir = isWhite ? -1 : 1;
 
     // Enemy moved 2 rows with pawn and is now adjacent
     if (
       Math.abs(lastMove.to.row - lastMove.from.row) === 2 &&
-      lastMove.to.row === row && // landed on our rank
-      Math.abs(lastMove.to.col - col) === 1 // and is in adjacent file
+      lastMove.to.row === row &&
+      Math.abs(lastMove.to.col - col) === 1
     ) {
       const targetRow = row + dir;
       const targetCol = lastMove.to.col;
@@ -152,8 +156,6 @@ function getLegalMovesForPiece(row, col, board, currentPlayer, lastMove, castlin
       });
     }
   }
-
-
 
   // Castling
   if (lower === 'k') {
@@ -208,7 +210,7 @@ function getLegalMovesForPiece(row, col, board, currentPlayer, lastMove, castlin
   return moves;
 }
 
-function getLegalMoves() {
+export function getLegalMoves() {
   if (selectedSquare === null) return [];
 
   const { row, col } = selectedSquare;
@@ -227,39 +229,31 @@ function getLegalMoves() {
   return moves.map(to => ({ from: selectedSquare, to }));
 }
 
-function getBoardState() {
+export function getBoardState() {
   return boardState;
 }
-function getCurrentPlayer() {
+
+export function getCurrentPlayer() {
   return currentPlayer;
+
 }
-function getGameStatus() {
+export function getGameStatus() {
   if (gameOver) {
     return `Game over. ${currentPlayer === 'white' ? 'Black' : 'White'} wins!`;
   }
   return null;
 }
-function getLastMove() {
+
+export function getLastMove() {
   return lastMove;
 }
-function resetGame() {
+
+export function resetGame() {
   initializeGame();
 }
-function getCastlingInfo() {
+
+export function getCastlingInfo() {
   return castlingInfo;
 }
 
-export {
-  initializeGame,
-  makeMove,
-  promotePawn,
-  getBoardState,
-  getCurrentPlayer,
-  getLegalMovesForPiece,
-  getGameStatus,
-  getLegalMoves,
-  resetGame,
-  getLastMove,
-  hasMoved,
-  getCastlingInfo
-};
+

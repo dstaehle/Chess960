@@ -1,11 +1,15 @@
-import { isWhitePiece, isBlackPiece, isInCheck, isCheckmate } from './engine.js';
+import { 
+  isWhitePiece, 
+  isBlackPiece, 
+  isInCheck, 
+  isCheckmate 
+} from './engine.js';
 
 export function makeMove(from, to, moveMeta, state) {
 	const {
 		boardState,
 		currentPlayer,
 		hasMoved,
-		castlingInfo,
 		lastMove
 	} = state;
 
@@ -15,7 +19,7 @@ export function makeMove(from, to, moveMeta, state) {
 	let updatedHasMoved = JSON.parse(JSON.stringify(hasMoved));
 	let pendingPromotion = null;
 
-	// ♔ Castling
+	// Castling
 	if (lowerPiece === 'k' && moveMeta?.isCastle) {
 		const rookFromCol = moveMeta.rookCol;
 		const rook = newBoard[from.row][rookFromCol];
@@ -57,7 +61,7 @@ export function makeMove(from, to, moveMeta, state) {
   }
 
 
-	// 🧬 Promotion setup
+	// Promotion setup
 	if (
 		lowerPiece === 'p' &&
 		((isWhitePiece(piece) && to.row === 0) || (isBlackPiece(piece) && to.row === 7))
@@ -66,7 +70,7 @@ export function makeMove(from, to, moveMeta, state) {
 		return { requiresPromotion: true, pendingPromotion };
 	}
 
-	// ✅ Standard move
+	// Standard move
 	newBoard[to.row][to.col] = piece;
 	newBoard[from.row][from.col] = null;
 

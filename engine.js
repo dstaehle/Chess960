@@ -1,24 +1,16 @@
 // engine.js
 
-function getPieceSVG(piece) {
-  if (!piece) return null;
-  const code = piece.toLowerCase();
-  const color = piece === piece.toUpperCase() ? 'w' : 'b';
-  return `pieces/${color}${code}.svg`; // Example: pieces/alpha/wk.svg
-}
-
-function isWhitePiece(p) {
+export function isWhitePiece(p) {
   if (typeof p !== 'string' || p.length !== 1) return false;
   return p === p.toUpperCase();
 }
 
-
-function isBlackPiece(p) {
+export function isBlackPiece(p) {
   if (typeof p !== 'string' || p.length !== 1) return false;
   return p === p.toLowerCase();
 }
 
-function generateChess960BackRank() {
+export function generateChess960BackRank() {
   const pieces = Array(8).fill(null);
   placeTwoBishops(pieces);
   placeQueen(pieces);
@@ -67,7 +59,7 @@ function randomChoice(array) {
   return array[Math.floor(Math.random() * array.length)];
 }
 
-function createInitialBoard() {
+export function createInitialBoard() {
   const whiteBack = generateChess960BackRank().map(p => p.toUpperCase());
   const blackBack = whiteBack.map(p => p.toLowerCase());
   const board = Array.from({ length: 8 }, () => Array(8).fill(null));
@@ -92,8 +84,8 @@ function createInitialBoard() {
       rookCols: whiteRookCols,
       kingSideTarget: 6,
       queenSideTarget: 2,
-      kingSideRookTarget: 5,    // rook lands to the left of g1
-      queenSideRookTarget: 3    // rook lands to the right of c1
+      kingSideRookTarget: 5,
+      queenSideRookTarget: 3
     },
     black: {
       kingStartCol: blackKingCol,
@@ -104,13 +96,8 @@ function createInitialBoard() {
       queenSideRookTarget: 3
     }
   };
-
-
   return { board, whiteBack, blackBack, castlingInfo };
 }
-
-
-
 
 function isPathClear(from, to, board) {
   const stepRow = Math.sign(to.row - from.row);
@@ -125,7 +112,7 @@ function isPathClear(from, to, board) {
   return true;
 }
 
-function isSquareAttacked(board, row, col, attackerIsWhite, lastMove = null) {
+export function isSquareAttacked(board, row, col, attackerIsWhite, lastMove = null) {
   for (let r = 0; r < 8; r++) {
     for (let c = 0; c < 8; c++) {
       const piece = board[r][c];
@@ -138,11 +125,11 @@ function isSquareAttacked(board, row, col, attackerIsWhite, lastMove = null) {
       }
     }
   }
+
   return false;
 }
 
-
-function findKingPosition(board, isWhite) {
+export function findKingPosition(board, isWhite) {
   for (let r = 0; r < 8; r++) {
     for (let c = 0; c < 8; c++) {
       const piece = board[r][c];
@@ -155,10 +142,11 @@ function findKingPosition(board, isWhite) {
       }
     }
   }
+
   return null;
 }
 
-function isLegalMove(piece, from, to, board, skipCheckTest = false, lastMove = null, castlingInfo = null) {
+export function isLegalMove(piece, from, to, board, skipCheckTest = false, lastMove = null, castlingInfo = null) {
   if (!from || !to || !board || !piece) return false;
   if (typeof from.row !== "number" || typeof from.col !== "number" ||
       typeof to.row !== "number" || typeof to.col !== "number") return false;
@@ -201,12 +189,12 @@ function isLegalMove(piece, from, to, board, skipCheckTest = false, lastMove = n
       }
       break;
     }
+
     default:
       return false;
   }
 
   if (!valid) return false;
-
   if (skipCheckTest) return true;
 
   const temp = board.map(row => row.slice());
@@ -297,7 +285,7 @@ function isLegalKingMove(from, to) {
   return dr <= 1 && dc <= 1;
 }
 
-function isLegalCastlingMove(from, to, board, isWhite, lastMove, castlingInfo) {
+export function isLegalCastlingMove(from, to, board, isWhite, lastMove, castlingInfo) {
   const side = isWhite ? 'white' : 'black';
   const info = castlingInfo?.[side];
   if (!info) return false;
@@ -335,11 +323,7 @@ function isLegalCastlingMove(from, to, board, isWhite, lastMove, castlingInfo) {
   return true;
 }
 
-
-
-
-
-function getAllKnightInfluence(board) {
+export function getAllKnightInfluence(board) {
   const influence = [];
   for (let row = 0; row < 8; row++) {
     for (let col = 0; col < 8; col++) {
@@ -375,16 +359,14 @@ function getKnightInfluenceAt(row, col, board) {
   return influence;
 }
 
-
-
-function isInCheck(board, currentPlayer, lastMove = null) {
+export function isInCheck(board, currentPlayer, lastMove = null) {
   const isWhite = currentPlayer === 'white';
   const kingPos = findKingPosition(board, isWhite);
   if (!kingPos) return false;
   return isSquareAttacked(board, kingPos.row, kingPos.col, !isWhite);
 }
 
-function hasAnyLegalMoves(board, currentPlayer) {
+export function hasAnyLegalMoves(board, currentPlayer) {
   const isWhite = currentPlayer === 'white';
   for (let r = 0; r < 8; r++) {
     for (let c = 0; c < 8; c++) {
@@ -400,14 +382,15 @@ function hasAnyLegalMoves(board, currentPlayer) {
       }
     }
   }
+
   return false;
 }
 
-function isCheckmate(board, currentPlayer) {
+export function isCheckmate(board, currentPlayer) {
   return isInCheck(board, currentPlayer) && !hasAnyLegalMoves(board, currentPlayer);
 }
 
-function getPawnInfluenceAt(row, col, piece, board) {
+export function getPawnInfluenceAt(row, col, piece, board) {
   const isWhite = isWhitePiece(piece);
   const dir = isWhite ? -1 : 1;
   const influence = [];
@@ -425,7 +408,7 @@ function getPawnInfluenceAt(row, col, piece, board) {
 
 export function getBishopInfluenceAt(row, col, board) {
   const directions = [
-    [-1, -1], [-1, 1], [1, -1], [1, 1]  // NW, NE, SW, SE
+    [-1, -1], [-1, 1], [1, -1], [1, 1]
   ];
   const influence = [];
 
@@ -435,7 +418,7 @@ export function getBishopInfluenceAt(row, col, board) {
 
     while (r >= 0 && r <= 7 && c >= 0 && c <= 7) {
       influence.push({ row: r, col: c });
-      if (board[r][c]) break;  // Stop on first piece (still add it)
+      if (board[r][c]) break;  
       r += dr;
       c += dc;
     }
@@ -447,10 +430,10 @@ export function getBishopInfluenceAt(row, col, board) {
 function getRookInfluenceAt(row, col, board) {
   const moves = [];
   const directions = [
-    { dr: -1, dc: 0 }, // up
-    { dr: 1, dc: 0 },  // down
-    { dr: 0, dc: -1 }, // left
-    { dr: 0, dc: 1 }   // right
+    { dr: -1, dc: 0 }, 
+    { dr: 1, dc: 0 },  
+    { dr: 0, dc: -1 }, 
+    { dr: 0, dc: 1 }  
   ];
 
   for (const { dr, dc } of directions) {
@@ -489,8 +472,8 @@ function getQueenInfluenceAt(row, col, board) {
 
   // Combine bishop-like moves
   const deltas = [
-    [-1, -1], [-1, 1], [1, -1], [1, 1], // diagonals
-    [-1, 0], [1, 0], [0, -1], [0, 1]    // straight lines
+    [-1, -1], [-1, 1], [1, -1], [1, 1],
+    [-1, 0], [1, 0], [0, -1], [0, 1]    
   ];
 
   for (const [dr, dc] of deltas) {
@@ -498,7 +481,9 @@ function getQueenInfluenceAt(row, col, board) {
     let c = col + dc;
     while (r >= 0 && r < 8 && c >= 0 && c < 8) {
       influence.push({ row: r, col: c });
-      if (board[r][c]) break; // Stop if there's a piece in the way
+
+      // Stop if there's a piece in the way
+      if (board[r][c]) break;
       r += dr;
       c += dc;
     }
@@ -508,7 +493,7 @@ function getQueenInfluenceAt(row, col, board) {
 }
 
 
-function buildInfluenceMap(board) {
+export function buildInfluenceMap(board) {
   const influenceMap = [...Array(8)].map(() =>
     [...Array(8)].map(() => ({
       white: [],
@@ -563,23 +548,3 @@ function buildInfluenceMap(board) {
   return influenceMap;
 }
 
-
-export {
-  isWhitePiece,
-  isBlackPiece,
-  generateChess960BackRank,
-  createInitialBoard,
-  isLegalMove,
-  isInCheck,
-  isCheckmate,
-  hasAnyLegalMoves,
-  findKingPosition,
-  isSquareAttacked,
-  isPathClear,
-  getKnightInfluenceAt,
-  getAllKnightInfluence,
-  buildInfluenceMap,
-  getPawnInfluenceAt,
-  getPieceSVG,
-  isLegalCastlingMove
-};

@@ -81,7 +81,6 @@ function simulateMove(from, to, state) {
     board,
     currentPlayer,
     castlingInfo,
-    lastMove,
     hasMoved,
   } = state;
 
@@ -114,7 +113,8 @@ export function maybeMakeBotMove() {
     castlingInfo,
   };
 
-  const { move } = minimax(state, 2, true); // depth 2 is decent for speed
+  // depth 2 is decent for speed
+  const { move } = minimax(state, 3, true);
 
   if (!move) return;
 

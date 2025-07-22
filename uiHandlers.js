@@ -1,18 +1,18 @@
 // uiHandlers.js
 
+import { maybeMakeBotMove } from './botLogic.js';
 import { updateBoard } from './uiBoard.js';
 import {
 	makeMove,
-	promotePawn,
 	getCurrentPlayer,
-	getGameStatus,
 	getLegalMovesForPiece,
 	getBoardState,
 	getLastMove,
 	getCastlingInfo,
     resetGame
 } from './game.js';
-import { maybeMakeBotMove } from './botLogic.js';
+
+import { showPromotionModal } from './ui.js';
 
 let selectedSquare = null;
 let cachedLegalMoves = [];
@@ -31,7 +31,6 @@ export function handleClick(row, col) {
 	const currentPlayer = getCurrentPlayer();
 	const board = getBoardState();
 	const piece = board[row][col];
-
 	const isFirstClick = selectedSquare === null;
 
 	if (isFirstClick) {
@@ -43,7 +42,7 @@ export function handleClick(row, col) {
 
 function handleFirstClick(row, col, piece, board, player) {
 	if (!piece) {
-		console.log("⬜️ Clicked empty square with no piece selected");
+		console.log("Clicked empty square with no piece selected");
 		return;
 	}
 
@@ -51,7 +50,7 @@ function handleFirstClick(row, col, piece, board, player) {
 	const isPlayersPiece = (player === "white" && isWhite) || (player === "black" && !isWhite);
 
 	if (!isPlayersPiece) {
-		console.log("🚫 Clicked opponent's piece");
+		console.log("Clicked opponent's piece");
 		return;
 	}
 
@@ -65,7 +64,7 @@ function handleFirstClick(row, col, piece, board, player) {
 		getCastlingInfo()
 	);
 
-	console.log("✅ Selected square:", selectedSquare, "Legal moves:", cachedLegalMoves);
+	console.log("Selected square:", selectedSquare, "Legal moves:", cachedLegalMoves);
 	updateBoard(cachedLegalMoves);
 }
 
@@ -74,7 +73,7 @@ function handleSecondClick(row, col, board, player) {
 
 	// Cancel if clicking same square again
 	if (from.row === row && from.col === col) {
-		console.log("🔄 Clicked same square — resetting selection");
+		console.log("Clicked same square — resetting selection");
 		resetSelection();
 		updateBoard();
 		return;
@@ -84,20 +83,17 @@ function handleSecondClick(row, col, board, player) {
 	const moveMeta = matchingMoves.sort((a, b) => (b.enPassant === true) - (a.enPassant === true))[0];
 
 	if (!moveMeta) {
-		console.log("⛔ Invalid move attempt or move not found in legal moves");
+		console.log("Invalid move attempt or move not found in legal moves");
 		resetSelection();
 		updateBoard();
 		return;
 	}
 
 	const to = { row, col };
-	console.log("↪️ From:", from, "To:", to);
-	console.log("📦 Making move with metadata:", moveMeta);
-
 	const result = makeMove(from, to, moveMeta);
 
 	if (result?.requiresPromotion) {
-		console.log("🛑 Promotion required");
+		console.log("Promotion required");
 		showPromotionModal(player === "white");
 		return;
 	}
@@ -110,7 +106,7 @@ function handleSecondClick(row, col, board, player) {
 function resetSelection() {
 	selectedSquare = null;
 	cachedLegalMoves = [];
-	updateBoard(); // Clears highlights
+	updateBoard();
 }
 
 export function createBoard() {
